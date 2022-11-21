@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.10) 
+
+SET(CMAKE_C_COMPILER gcc)
+SET(CMAKE_CXX_COMPILER g++)
+
+# set the project name 
+project(demo VERSION 1.0) 
+
+# add lib path
+link_directories(${CMAKE_SOURCE_DIR}/lib/x64)
+
+# set output path
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY 	${CMAKE_SOURCE_DIR}/build)
+
+# add the executable 
+add_executable(demo src/dump.c) 
+
+# link lib file
+target_link_libraries(demo Packet) 
+target_link_libraries(demo wpcap) 
+
+target_include_directories(demo PUBLIC 
+                           "${PROJECT_BINARY_DIR}" 
+                           "include"
+                           ) 

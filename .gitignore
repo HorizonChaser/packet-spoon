@@ -50,3 +50,15 @@ compile_commands.json
 
 # QtCreator local machine specific files for imported projects
 *creator.user*
+
+# conf dirs
+.vscode/
+build/
+cmake*
+*.exe
+*.dll
+
+# CMake still available
+!CMakeLists.txt
+
+
