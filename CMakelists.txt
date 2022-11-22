@@ -6,6 +6,7 @@ SET(CMAKE_CXX_COMPILER g++)
 # set the project name 
 project(demo VERSION 1.0) 
 
+
 set(CMAKE_PREFIX_PATH $ENV{QT_DIR})
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -29,7 +30,7 @@ set( QT_HEADERS include/mainwindow.h )
 # add lib path
 link_directories(${CMAKE_SOURCE_DIR}/lib/x64)
 
-qt6_wrap_ui( UI_HEADERS ${CMAKE_SOURCE_DIR}/src/mainwindow.ui )
+qt6_wrap_ui( UI_HEADERS ${CMAKE_SOURCE_DIR}/src/gui/mainwindow.ui )
 
 add_executable(${CMAKE_PROJECT_NAME} WIN32 ${PCAP_SRC_LIST} ${GUI_SRC_LIST} ${QT_HEADERS} ${UI_HEADERS})
 
