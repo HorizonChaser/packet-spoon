@@ -6,12 +6,12 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include <mainwindow.h>
 #include <pcap.h>
 #include <stdio.h>
-#include <time.h>
-#ifdef _WIN32
 #include <tchar.h>
-#include "mainwindow.h"
+#include <time.h>
+
 #include <QApplication>
 BOOL LoadNpcapDlls() {
     _TCHAR npcap_dir[512];
@@ -28,16 +28,14 @@ BOOL LoadNpcapDlls() {
     }
     return TRUE;
 }
-#endif
 
-int main(int argc, char *argv[]) {
+#undef main
+int main(int argc, char** argv) {
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
 
-//    QApplication a(argc, argv);
-//    MainWindow w;
-//    w.show();
-
-//    return a.exec();
-
+    return a.exec();
 
     pcap_if_t *alldevs;
     pcap_if_t *d;
