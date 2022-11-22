@@ -53,7 +53,6 @@ compile_commands.json
 
 # conf dirs
 .vscode/
-build/
 cmake*
 *.exe
 *.dll
@@ -61,4 +60,6 @@ cmake*
 # CMake still available
 !CMakeLists.txt
 
-
+# for now, since we cannot determine which dll should be packed
+# we chose to exclude everything inside ./build, to avoid expansion of repo size
+build/**

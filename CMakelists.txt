@@ -32,14 +32,12 @@ link_directories(${CMAKE_SOURCE_DIR}/lib/x64)
 
 qt6_wrap_ui( UI_HEADERS ${CMAKE_SOURCE_DIR}/src/gui/mainwindow.ui )
 
+# set output path
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY 	${CMAKE_SOURCE_DIR}/build)
+
 add_executable(${CMAKE_PROJECT_NAME} WIN32 ${PCAP_SRC_LIST} ${GUI_SRC_LIST} ${QT_HEADERS} ${UI_HEADERS})
 
 # target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
-
-
-
-# set output path
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY 	${CMAKE_SOURCE_DIR}/build)
 
 # add the executable 
 # add_executable(demo src/dump.c src/mainwindow.cpp)
