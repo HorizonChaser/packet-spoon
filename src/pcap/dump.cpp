@@ -6,7 +6,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include <mainwindow.h>
+#include "gui/mainwindow.h"
 #include <pcap.h>
 #include <stdio.h>
 #include <tchar.h>
