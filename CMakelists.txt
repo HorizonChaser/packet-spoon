@@ -25,7 +25,7 @@ find_package(Qt6 COMPONENTS Widgets Core REQUIRED)
 aux_source_directory(src/pcap PCAP_SRC_LIST)
 aux_source_directory(src/gui GUI_SRC_LIST)
 
-set( QT_HEADERS include/gui/mainwindow.h )
+set( QT_HEADERS include/gui/mainwindow.h include/gui/netcarditemmodel.h )
 
 # add lib path
 link_directories(${CMAKE_SOURCE_DIR}/lib/x64)
