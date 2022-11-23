@@ -24,6 +24,7 @@ find_package(Qt6 COMPONENTS Widgets Core REQUIRED)
 
 aux_source_directory(src/pcap PCAP_SRC_LIST)
 aux_source_directory(src/gui GUI_SRC_LIST)
+aux_source_directory(src/pcapDemo PCAP_DEMO_SRC_LIST)
 
 set( QT_HEADERS include/gui/mainwindow.h include/gui/netcarditemmodel.h )
 
@@ -37,24 +38,28 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY 	${CMAKE_SOURCE_DIR}/build)
 
 add_executable(${CMAKE_PROJECT_NAME} WIN32 ${PCAP_SRC_LIST} ${GUI_SRC_LIST} ${QT_HEADERS} ${UI_HEADERS})
 
-# target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
+add_executable("pcap_demo" WIN32 ${PCAP_DEMO_SRC_LIST})
 
-# add the executable 
-# add_executable(demo src/dump.c src/mainwindow.cpp)
+# target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
 # link lib file
 target_link_libraries(${CMAKE_PROJECT_NAME} Packet)
 target_link_libraries(${CMAKE_PROJECT_NAME} wpcap)
 
+target_link_libraries("pcap_demo" Packet)
+target_link_libraries("pcap_demo" wpcap)
+target_link_libraries("pcap_demo" ws2_32)
+
 target_link_libraries(${CMAKE_PROJECT_NAME}
     Qt6::Widgets
     Qt6::Core)
 
-# qt_import_qml_plugins(${CMAKE_PROJECT_NAME})
-
-
-
 target_include_directories(demo PUBLIC 
+                           "${PROJECT_BINARY_DIR}" 
+                           "include"
+                           )
+
+target_include_directories("pcap_demo" PUBLIC 
                            "${PROJECT_BINARY_DIR}" 
                            "include"
                            ) 
