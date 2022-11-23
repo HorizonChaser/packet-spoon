@@ -65,6 +65,15 @@ struct PacketItem {
 };
 
 /**
+ * 每一层的解析结果
+ */
+class ParsedFrame {
+   public:
+    std::string name;                                        //当前层的解析名称
+    std::vector<std::pair<std::string, std::string>> frame;  //当前层的解析结果, 0 到多个键值对
+};
+
+/**
  * 每个数据包的解析结果, 可能由多层构成
  */
 class PacketViewItem {
@@ -78,14 +87,7 @@ class PacketViewItem {
     std::vector<ParsedFrame> detail;  //解析结果, 由 0 到多个 ParsedFrame 组成
 };
 
-/**
- * 每一层的解析结果
- */
-class ParsedFrame {
-   public:
-    std::string name;                                        //当前层的解析名称
-    std::vector<std::pair<std::string, std::string>> frame;  //当前层的解析结果, 0 到多个键值对
-};
+
 
 /**
  * 捕获过程的控制类, 每一次捕获应当都是一个新的 CaptureSession 对象

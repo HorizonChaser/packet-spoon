@@ -27,46 +27,157 @@
      <widget class="QPushButton" name="pushButton">
       <property name="geometry">
        <rect>
-        <x>330</x>
+        <x>360</x>
         <y>430</y>
         <width>93</width>
         <height>28</height>
        </rect>
       </property>
       <property name="text">
-       <string>开始使用</string>
+       <string>选择网卡</string>
       </property>
      </widget>
      <widget class="QTreeView" name="if_table">
       <property name="geometry">
        <rect>
-        <x>260</x>
-        <y>150</y>
-        <width>256</width>
-        <height>192</height>
+        <x>150</x>
+        <y>90</y>
+        <width>511</width>
+        <height>321</height>
        </rect>
       </property>
      </widget>
     </widget>
     <widget class="QWidget" name="capture_page">
-     <widget class="QLabel" name="label_2">
+     <widget class="QWidget" name="verticalLayoutWidget">
       <property name="geometry">
        <rect>
-        <x>360</x>
-        <y>200</y>
-        <width>191</width>
-        <height>61</height>
+        <x>30</x>
+        <y>10</y>
+        <width>751</width>
+        <height>501</height>
        </rect>
       </property>
-      <property name="font">
-       <font>
-        <family>Consolas</family>
-        <pointsize>12</pointsize>
-       </font>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QScrollArea" name="scrollArea">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents_6">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>747</width>
+            <height>244</height>
+           </rect>
+          </property>
+         </widget>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QTreeView" name="packetDetailTreeView_3"/>
+         </item>
+         <item>
+          <widget class="QScrollArea" name="packetRawScrollArea_3">
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="scrollAreaWidgetContents_5">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>368</width>
+              <height>242</height>
+             </rect>
+            </property>
+            <widget class="QWidget" name="horizontalLayoutWidget_4">
+             <property name="geometry">
+              <rect>
+               <x>-1</x>
+               <y>-1</y>
+               <width>371</width>
+               <height>251</height>
+              </rect>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <item>
+               <widget class="QTextBrowser" name="packetHexBrowser_3"/>
+              </item>
+              <item>
+               <widget class="QTextBrowser" name="packetAsciiBroswer_3"/>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget_5">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>510</y>
+        <width>751</width>
+        <height>31</height>
+       </rect>
       </property>
-      <property name="text">
-       <string>主页面</string>
-      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_9">
+       <item>
+        <widget class="QPushButton" name="pushButton_4">
+         <property name="text">
+          <string>开始捕获</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_3">
+         <property name="text">
+          <string>停止捕获</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_2">
+         <property name="text">
+          <string>返回</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </widget>
    </widget>
@@ -80,8 +191,105 @@
      <height>26</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>文件</string>
+    </property>
+    <addaction name="actionopen"/>
+    <addaction name="actionsave"/>
+    <addaction name="separator"/>
+    <addaction name="actionexit"/>
+   </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>编辑</string>
+    </property>
+    <addaction name="actionClear_current_packets"/>
+    <addaction name="actionSearch"/>
+   </widget>
+   <widget class="QMenu" name="menu_3">
+    <property name="title">
+     <string>捕获</string>
+    </property>
+    <addaction name="actionStart"/>
+    <addaction name="actionStop"/>
+   </widget>
+   <widget class="QMenu" name="menu_4">
+    <property name="title">
+     <string>工具</string>
+    </property>
+    <addaction name="actionExtensions"/>
+    <addaction name="actionSettings"/>
+   </widget>
+   <widget class="QMenu" name="menu_5">
+    <property name="title">
+     <string>帮助</string>
+    </property>
+    <addaction name="actionHelp"/>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="menu_2"/>
+   <addaction name="menu_3"/>
+   <addaction name="menu_4"/>
+   <addaction name="menu_5"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionopen">
+   <property name="text">
+    <string>open...</string>
+   </property>
+  </action>
+  <action name="actionsave">
+   <property name="text">
+    <string>save...</string>
+   </property>
+  </action>
+  <action name="actionexit">
+   <property name="text">
+    <string>Exit...</string>
+   </property>
+  </action>
+  <action name="actionClear_current_packets">
+   <property name="text">
+    <string>Clear current packets</string>
+   </property>
+  </action>
+  <action name="actionSearch">
+   <property name="text">
+    <string>Search</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="text">
+    <string>Start</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="actionExtensions">
+   <property name="text">
+    <string>Extensions</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="text">
+    <string>Settings</string>
+   </property>
+  </action>
+  <action name="actionHelp">
+   <property name="text">
+    <string>Help</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
