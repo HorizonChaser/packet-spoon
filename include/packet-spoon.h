@@ -43,6 +43,13 @@ class NetworkInterface {
     std::string friendly_name;  //人类可读的名字
     bool is_loop_back;          //是否环回设备
     AddressItem* addrs;         //地址列表, 一个网卡可能有多个地址
+
+    NetworkInterface() = delete;
+
+    /**
+     * 获得所有的网络接口
+     */
+    static std::vector<NetworkInterface> get_all_network_interfaces();
 };
 
 /**
@@ -81,7 +88,9 @@ class ParsedFrame {
 
 /**
  * 捕获过程的控制类, 每一次捕获应当都是一个新的 CaptureSession 对象
- * 该类不允许并发修改
+ * 成员函数返回 false 说明存在错误, 详细信息在 this.error_msg 中给出
+ * 此时不会主动关闭 Session (例如可能是抓包过程中存在错误, 但我们还需要之前正确捕获的数据), 仍需要在合适的时候关闭
+ * 该类不允许对 public 字段并发修改
  */
 class CaptureSession {
    public:
@@ -89,19 +98,28 @@ class CaptureSession {
     NetworkInterface curr_interface;  //当前被选中的网卡
     double cap_started_at;            //捕获开始时间
     double cap_ended_at;              //捕获结束时间
+    std::string error_msg;            //错误原因
 
     std::vector<PacketViewItem> cap_packets_view;  //解析结果
     std::vector<PacketItem> cap_packets;           //原始数据包
 
+   private:
+    volatile int status;  //状态, 仅供内部分析等同步用
+
+   public:
     CaptureSession() = delete;
     CaptureSession(NetworkInterface selected_nic);
+    CaptureSession(std::string selected_nic_name);
 
     /**
      * 开始捕获, 需要手动调用 stop_capture() 结束
+     * 同步阻塞
      */
     bool start_capture();
+
     /**
-     * 捕获到目标数量的包之后自动停止
+     * 捕获到目标数量的包之后自动停止, 或手动调用 stop_capture() 结束
+     * 同步阻塞
      */
     bool start_capture(int target_count);
 
@@ -109,6 +127,11 @@ class CaptureSession {
      * 停止捕获
      */
     bool stop_capture();
+
+    /**
+     * 开始解析所有数据包
+     */
+    bool start_analysis();
 
     /**
      * 获得原始数据包内容, 供 16 进制查看
@@ -120,8 +143,8 @@ class CaptureSession {
      */
     const std::vector<PacketViewItem>& get_packet_views();
 
-    //TODO: 路径类型不一定必须是 string, 可以按照方便改, 比如 FILE 也可以
-    //TODO: 保存失败的返回细节 - 不一定必须是 bool, 可再议
+    // TODO: 路径类型不一定必须是 string, 可以按照方便改, 比如 FILE 也可以
+    // TODO: 保存失败的返回细节 - 不一定必须是 bool, 可再议
 
     /**
      * 保存到 pcap 文件
@@ -132,6 +155,12 @@ class CaptureSession {
      * 保存某一层的原始内容到文件
      */
     bool dump_selected_frame(std::string frame_name, std::string path);
+
+    /**
+     * 关闭当前 Session
+     * 注意, 关闭 Session 后该 Session 所有的资源将不保证可用, 因此请确定是否真正需要关闭
+     */
+    bool close();
 };
 
 #endif  // DEMO_PACKET_SPOON_H
