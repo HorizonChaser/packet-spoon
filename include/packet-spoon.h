@@ -1,6 +1,7 @@
 #ifndef DEMO_PACKET_SPOON_H
 #define DEMO_PACKET_SPOON_H
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -100,8 +101,8 @@ class CaptureSession {
     double cap_ended_at;              //捕获结束时间
     std::string error_msg;            //错误原因
 
-    std::vector<PacketViewItem> cap_packets_view;  //解析结果
-    std::vector<PacketItem> cap_packets;           //原始数据包
+    std::map<int, PacketViewItem> cap_packets_view;  //解析结果
+    std::vector<PacketItem> cap_packets;             //原始数据包
 
    private:
     volatile int status;  //状态, 仅供内部分析等同步用
@@ -139,9 +140,9 @@ class CaptureSession {
     const std::vector<PacketItem>& get_packets();
 
     /**
-     * 获得解析结果
+     * 获得指定 id 的数据包的解析结果
      */
-    const std::vector<PacketViewItem>& get_packet_views();
+    const PacketItem& get_packet_view(int id);
 
     // TODO: 路径类型不一定必须是 string, 可以按照方便改, 比如 FILE 也可以
     // TODO: 保存失败的返回细节 - 不一定必须是 bool, 可再议
