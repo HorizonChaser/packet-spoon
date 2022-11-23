@@ -31,6 +31,7 @@ Makefile*
 *build-*
 *.qm
 *.prl
+*_autogen
 
 # Qt unit tests
 target_wrapper.*
@@ -56,6 +57,7 @@ compile_commands.json
 cmake*
 *.exe
 *.dll
+.qt
 
 # CMake still available
 !CMakeLists.txt
