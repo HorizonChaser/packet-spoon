@@ -1,125 +1,137 @@
 #ifndef DEMO_PACKET_SPOON_H
 #define DEMO_PACKET_SPOON_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
-typedef uint32_t ipv4_t;
+/*
 
-// 网卡
-struct NetCard{
-    // 网卡名称 如 WLAN
-    std::string name;
-    // 网卡描述 如 Qualcomm QCA9377 802.11ac Wireless Adapter
-    std::string description;
-    // 物理地址 如 0xEC5C68257AF5 代表 EC-5C-68-25-7A-F5
-    uint64_t physics;
-    // ipv6高48位
-    uint64_t ipv6_high = 0;
-    // ipv6低48位
-    uint64_t ipv6_low = 0;
-    ipv4_t ipv4 = 0;
-    // 掩码位数 如 24
-    uint8_t mask_bits = 0;
-    // 网关
-    ipv4_t gateway = 0;
-    ipv4_t dns = 0;
+网卡信息的样例
 
-    NetCard();
-    NetCard(const std::string &name, const std::string &description, uint64_t physics, uint64_t ipv6_high, uint64_t ipv6_low, ipv4_t ipv4, uint8_t mask_bits, ipv4_t gateway, ipv4_t dns) : name(name), description(description), physics(physics), ipv6_high(ipv6_high), ipv6_low(ipv6_low), ipv4(ipv4), mask_bits(mask_bits), gateway(gateway), dns(dns) {}
-};
-// 返回值DTO
-template <typename T>
-struct RetMsg{
-    T* retVal;
-    bool success = true;
-    std::string msg = "";
-    RetMsg();
-    RetMsg(T* retVal, bool success, std::string msg) : retVal(retVal), success(success), msg(msg) {}
+\Device\NPF_{30992269-20EC-4F8B-938A-7842D5458AFA}
+        Description: Realtek Gaming GbE Family Controller
+        Loopback: no
+        Address Family: #2
+        Address Family Name: AF_INET
+        Address: 192.168.31.239
+        Netmask: 255.255.255.0
+        Broadcast Address: 192.168.31.255
+        Address Family: #23
+        Address Family Name: AF_INET6
+        Address: 0:0:fe80::93a:36e8
+*/
+
+/**
+ * 地址
+ */
+class AddressItem {
+   public:
+    std::string type;  // AF_INET for IPv4, AF_INET6 for IPv6
+    std::string addr;  //地址
+
+    // 下面两项在 IPv6 下不一定可用, 可能是空串
+    std::string mask;            //掩码
+    std::string broadcast_addr;  //广播地址
 };
 
-// 数据包字段
-struct PacketItemTreeNode{
-    std::string name = "";
-    std::string content = "";
-    int start_pos = -1;
-    int end_pos = -1;
-    int len = 0;
-    // 子节点
-    PacketItemTreeNode* child = nullptr;
-    // 兄弟节点
-    PacketItemTreeNode* next = nullptr;
-    PacketItemTreeNode(const std::string &name, const std::string &content, int start_pos = -1, int end_pos = -1) : name(name), content(content), start_pos(start_pos), end_pos(end_pos) {}
+/**
+ * 网卡信息
+ */
+class NetworkInterface {
+   public:
+    std::string name;           //类似第一行的设备路径
+    std::string friendly_name;  //人类可读的名字
+    bool is_loop_back;          //是否环回设备
+    AddressItem* addrs;         //地址列表, 一个网卡可能有多个地址
 };
 
-struct PacketItemTree{
-    PacketItemTreeNode* root;
-    PacketItemTree(PacketItemTreeNode* root) : root(root) {}
-    ~PacketItemTree() {
-        if(root)
-            delete root;
-    }
+/**
+ * 原始数据包
+ */
+struct PacketItem {
+    int id;           //序号, 保证和 PacketViewItem 的一一对应
+    double cap_time;  //捕获到的时刻, 相对开始捕获的时刻来说
+    int cap_len;      //捕获到的长度, 可能小于 Len, 即没能完全捕获
+    int len;          //真实长度
+    char* content;    //原始内容
 };
 
-// 数据包
-struct Packet{
-    int id;
-    // 自开始捕获起的时间
-    double time;
-    // 源地址
-    ipv4_t sourse;
-    // 目标地址
-    ipv4_t target;
-    // 协议编号 如果未知协议名，则显示编号
-    int protocol;
-    int len;
-    std::string protocol_name;
-    // 数据包行为描述430443	如 443 → 9319 [ACK] Seq=4555 Ack=4528 Win=525568 Len=0
-    std::string info;
+/**
+ * 每个数据包的解析结果, 可能由多层构成
+ */
+class PacketViewItem {
+   public:
+    int id;           //序号, 保证和 PacketItem 的一一对应
+    double cap_time;  //捕获到的时刻, 相对开始捕获的时刻来说
+    AddressItem source;
+    AddressItem target;
+    std::string protocol;             //最细化的协议, 如果完全不能解析则以 0x 开头
+    std::string description;          //行为描述, 如果不能解析长度可能为 0
+    std::vector<ParsedFrame> detail;  //解析结果, 由 0 到多个 ParsedFrame 组成
 };
 
-
-// 网卡句柄
-typedef int nc_handler_t;
-// 初始化系统
-void init_capture_system();
-// 程序结束前调用
-void free_all();
-
-//获取所有网卡信息
-RetMsg<std::vector<NetCard>> get_all_net_cards();
-
-
-//根据网卡名获取网卡句柄，句柄类型为int，可以将实际的pcap_t存于数组中，然后返回数组的索引
-RetMsg<nc_handler_t> get_net_card(std::string name);
-
-// 开启一个线程，捕获包，并缓存
-void start_capture(nc_handler_t ncHandler);
-
-// 如果缓存区中有包，获取下一个包。如果没有，阻塞
-RetMsg<Packet> get_next_packet(nc_handler_t ncHandler);
-// 停止捕获，并关闭网卡
-void close_net_card(nc_handler_t ncHandler);
-// 解析数据包
-RetMsg<PacketItemTree> parse_packet(nc_handler_t ncHandler, int id);
-// 保存网卡捕获结果
-RetMsg<bool> save_net_card_capture_result(nc_handler_t ncHandler, std::vector<int> saving_ids, std::string path);
-// 自定义扩展信息
-struct Extension{
-    std::string name;
-    std::string description;
-    std::string path;
-    Extension();
-    Extension(std::string name, std::string description, std::string path) : name(name), description(description), path(path) {}
+/**
+ * 每一层的解析结果
+ */
+class ParsedFrame {
+   public:
+    std::string name;                                        //当前层的解析名称
+    std::vector<std::pair<std::string, std::string>> frame;  //当前层的解析结果, 0 到多个键值对
 };
 
-RetMsg<bool> add_extension(const Extension& ext);
+/**
+ * 捕获过程的控制类, 每一次捕获应当都是一个新的 CaptureSession 对象
+ * 该类不允许并发修改
+ */
+class CaptureSession {
+   public:
+    volatile int cap_count;           //当前已经捕获多少个包, 允许并发读取
+    NetworkInterface curr_interface;  //当前被选中的网卡
+    double cap_started_at;            //捕获开始时间
+    double cap_ended_at;              //捕获结束时间
 
-RetMsg<bool> remove_extension(std::string name);
+    std::vector<PacketViewItem> cap_packets_view;  //解析结果
+    std::vector<PacketItem> cap_packets;           //原始数据包
 
-RetMsg<std::vector<Extension>> get_all_extensions();
+    CaptureSession() = delete;
+    CaptureSession(NetworkInterface selected_nic);
 
+    /**
+     * 开始捕获, 需要手动调用 stop_capture() 结束
+     */
+    bool start_capture();
+    /**
+     * 捕获到目标数量的包之后自动停止
+     */
+    bool start_capture(int target_count);
 
+    /**
+     * 停止捕获
+     */
+    bool stop_capture();
 
+    /**
+     * 获得原始数据包内容, 供 16 进制查看
+     */
+    const std::vector<PacketItem>& get_packets();
 
-#endif // DEMO_PACKET_SPOON_H
+    /**
+     * 获得解析结果
+     */
+    const std::vector<PacketViewItem>& get_packet_views();
+
+    //TODO: 路径类型不一定必须是 string, 可以按照方便改, 比如 FILE 也可以
+    //TODO: 保存失败的返回细节 - 不一定必须是 bool, 可再议
+
+    /**
+     * 保存到 pcap 文件
+     */
+    bool dump_to_file_all(std::string path);
+
+    /**
+     * 保存某一层的原始内容到文件
+     */
+    bool dump_selected_frame(std::string frame_name, std::string path);
+};
+
+#endif  // DEMO_PACKET_SPOON_H
