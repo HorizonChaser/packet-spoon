@@ -1,10 +1,12 @@
 #ifndef DEMO_PACKET_SPOON_H
 #define DEMO_PACKET_SPOON_H
 
+#include <chrono>
+#include <ctime>
 #include <map>
 #include <string>
+#include <tuple>
 #include <vector>
-#include <ctime>
 /*
 
 网卡信息的样例
@@ -33,19 +35,23 @@ class AddressItem {
     // 下面两项在 IPv6 下不一定可用, 可能是空串
     std::string mask;            //掩码
     std::string broadcast_addr;  //广播地址
+
+   private:
+    ~AddressItem() = default;
 };
 
 /**
  * 网卡信息
  */
 class NetworkInterface {
-public:
-    std::string name;           //类似第一行的设备路径
-    std::string friendly_name;  //人类可读的名字
-    bool is_loop_back;          //是否环回设备
-    AddressItem* addrs;         //地址列表, 一个网卡可能有多个地址
+   public:
+    std::string name;                 //类似第一行的设备路径
+    std::string friendly_name;        //人类可读的名字
+    bool is_loop_back;                //是否环回设备
+    std::vector<AddressItem>& addrs;  //地址列表, 一个网卡可能有多个地址
 
-    NetworkInterface(const NetworkInterface& ni) = default;    
+    NetworkInterface(const std::string&);
+    NetworkInterface(const NetworkInterface& ni) = default;
     NetworkInterface(NetworkInterface&& ni) = default;
     NetworkInterface& operator=(const NetworkInterface& another) = default;
 
@@ -54,9 +60,10 @@ public:
      */
     static std::vector<NetworkInterface> get_all_network_interfaces();
 
-private:
-    NetworkInterface() {}
-    NetworkInterface(const std::string &name, const std::string &friendly_name, bool is_loop_back, AddressItem* addrs) : name(name), friendly_name(friendly_name), is_loop_back(is_loop_back), addrs(addrs) {}
+   private:
+    NetworkInterface(std::vector<AddressItem>& in) : addrs(in) {}
+    NetworkInterface(const std::string& name, const std::string& friendly_name, bool is_loop_back, std::vector<AddressItem>& addrs) : name(name), friendly_name(friendly_name), is_loop_back(is_loop_back), addrs(addrs) {}
+    ~NetworkInterface();
 };
 
 const std::string DEFAULT_NIC_NAME = "Default";
@@ -64,11 +71,17 @@ const std::string DEFAULT_NIC_NAME = "Default";
  * 原始数据包
  */
 struct PacketItem {
-    int id;           //序号, 保证和 PacketViewItem 的一一对应
-    double cap_time;  //捕获到的时刻, 相对开始捕获的时刻来说
-    int cap_len;      //捕获到的长度, 可能小于 Len, 即没能完全捕获
-    int len;          //真实长度
-    std::string content;    //原始内容
+   public:
+    int id;                                     //序号, 保证和 PacketViewItem 的一一对应
+    double cap_time;                            //捕获到的时刻, 相对开始捕获的时刻来说
+    int cap_len;                                //捕获到的长度, 可能小于 Len, 即没能完全捕获
+    int len;                                    //真实长度
+    const std::vector<unsigned char>& content;  //原始内容
+
+    PacketItem(const std::vector<unsigned char>& c) : content(c) {}
+
+   private:
+    ~PacketItem();
 };
 
 /**
@@ -76,8 +89,8 @@ struct PacketItem {
  */
 class ParsedFrame {
    public:
-    std::string name;                                        //当前层的解析名称
-    std::vector<std::pair<std::string, std::string>> frame;  //当前层的解析结果, 0 到多个键值对
+    std::string name;                                                   //当前层的解析名称
+    std::vector<std::tuple<std::string, std::string, int, int>> frame;  //当前层的解析结果, 0 到多个键值对
 };
 
 /**
@@ -94,8 +107,6 @@ class PacketViewItem {
     std::vector<ParsedFrame> detail;  //解析结果, 由 0 到多个 ParsedFrame 组成
 };
 
-
-
 /**
  * 捕获过程的控制类, 每一次捕获应当都是一个新的 CaptureSession 对象
  * 成员函数返回 false 说明存在错误, 详细信息在 this.error_msg 中给出
@@ -104,22 +115,25 @@ class PacketViewItem {
  */
 class CaptureSession {
    public:
-    volatile int cap_count;           //当前已经捕获多少个包, 允许并发读取
+    volatile int cap_count;                  //当前已经捕获多少个包, 允许并发读取
+    int cap_target;                          //目标捕获的包数, <0 则无限制
     const NetworkInterface& curr_interface;  //当前被选中的网卡
-    double cap_started_at;            //捕获开始时间
-    double cap_ended_at;              //捕获结束时间
-    std::string error_msg;            //错误原因
+    double cap_started_at;                   //捕获开始时间
+    double cap_ended_at;                     //捕获结束时间
+    std::string error_msg;                   //错误原因
 
     std::map<int, PacketViewItem> cap_packets_view;  //解析结果
     std::vector<PacketItem> cap_packets;             //原始数据包
 
    private:
     volatile int status;  //状态, 仅供内部分析等同步用
+    pcap_t* cap_handle;   //捕获的句柄
+    int loop_ret;         // pcap_loop() 返回的状态
 
    public:
     CaptureSession() = delete;
-    CaptureSession(const NetworkInterface &selected_nic);
-    CaptureSession(const std::string &selected_nic_name);
+    CaptureSession(const NetworkInterface& selected_nic);
+    CaptureSession(const std::string& selected_nic_name);
 
     /**
      * 开始捕获, 需要手动调用 stop_capture() 结束
@@ -140,18 +154,24 @@ class CaptureSession {
 
     /**
      * 开始解析所有数据包
+     * DELETED
      */
-    bool start_analysis();
+    // bool start_analysis();
 
     /**
-     * 获得原始数据包内容, 供 16 进制查看
+     * 获得所有原始数据包内容, 供 16 进制查看
      */
     const std::vector<PacketItem>& get_packets() const;
 
     /**
+     * 获得某个编号的原始数据包内容
+     */
+    const PacketItem& get_packet(int id) const;
+
+    /**
      * 获得指定 id 的数据包的解析结果
      */
-    const PacketViewItem& get_packet_view(int id);
+    const PacketViewItem& get_packet_view(int id) const;
 
     // TODO: 路径类型不一定必须是 string, 可以按照方便改, 比如 FILE 也可以
     // TODO: 保存失败的返回细节 - 不一定必须是 bool, 可再议
@@ -159,7 +179,7 @@ class CaptureSession {
     /**
      * 保存到 pcap 文件
      */
-    bool dump_to_file_all(const std::string& path);
+    bool dump_to_file_all(const std::string& path) const;
 
     /**
      * 保存某一层的原始内容到文件
@@ -171,6 +191,16 @@ class CaptureSession {
      * 注意, 关闭 Session 后该 Session 所有的资源将不保证可用, 因此请确定是否真正需要关闭
      */
     bool close();
+
+    static double get_time_double() {
+        auto time = std::chrono::system_clock::now().time_since_epoch();
+        std::chrono::seconds seconds = std::chrono::duration_cast<std::chrono::seconds>(time);
+        std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(time);
+        return (double)seconds.count() + ((double)(ms.count() % 1000) / 1000.0);
+    }
+
+   private:
+    static void pcap_callback(u_char* argument, const struct pcap_pkthdr* packet_header, const u_char* packet_content);
 };
 
 #endif  // DEMO_PACKET_SPOON_H
