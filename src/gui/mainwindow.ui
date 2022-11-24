@@ -237,12 +237,12 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionopen">
    <property name="text">
-    <string>open...</string>
+    <string>Open...</string>
    </property>
   </action>
   <action name="actionsave">
    <property name="text">
-    <string>save...</string>
+    <string>Save...</string>
    </property>
   </action>
   <action name="actionexit">
