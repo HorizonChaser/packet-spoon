@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
-
+#include <ctime>
 /*
 
 网卡信息的样例
@@ -39,18 +39,24 @@ class AddressItem {
  * 网卡信息
  */
 class NetworkInterface {
-   public:
+public:
     std::string name;           //类似第一行的设备路径
     std::string friendly_name;  //人类可读的名字
     bool is_loop_back;          //是否环回设备
     AddressItem* addrs;         //地址列表, 一个网卡可能有多个地址
 
-    NetworkInterface() = delete;
+    NetworkInterface(const NetworkInterface& ni) = default;    
+    NetworkInterface(NetworkInterface&& ni) = default;
+    NetworkInterface& operator=(const NetworkInterface& another) = default;
 
     /**
      * 获得所有的网络接口
      */
     static std::vector<NetworkInterface> get_all_network_interfaces();
+
+private:
+    NetworkInterface() {}
+    NetworkInterface(const std::string &name, const std::string &friendly_name, bool is_loop_back, AddressItem* addrs) : name(name), friendly_name(friendly_name), is_loop_back(is_loop_back), addrs(addrs) {}
 };
 
 /**
@@ -61,7 +67,7 @@ struct PacketItem {
     double cap_time;  //捕获到的时刻, 相对开始捕获的时刻来说
     int cap_len;      //捕获到的长度, 可能小于 Len, 即没能完全捕获
     int len;          //真实长度
-    char* content;    //原始内容
+    std::string content;    //原始内容
 };
 
 /**
@@ -98,7 +104,7 @@ class PacketViewItem {
 class CaptureSession {
    public:
     volatile int cap_count;           //当前已经捕获多少个包, 允许并发读取
-    NetworkInterface curr_interface;  //当前被选中的网卡
+    const NetworkInterface& curr_interface;  //当前被选中的网卡
     double cap_started_at;            //捕获开始时间
     double cap_ended_at;              //捕获结束时间
     std::string error_msg;            //错误原因
@@ -111,8 +117,8 @@ class CaptureSession {
 
    public:
     CaptureSession() = delete;
-    CaptureSession(NetworkInterface selected_nic);
-    CaptureSession(std::string selected_nic_name);
+    CaptureSession(const NetworkInterface &selected_nic);
+    CaptureSession(const std::string &selected_nic_name);
 
     /**
      * 开始捕获, 需要手动调用 stop_capture() 结束
@@ -139,12 +145,12 @@ class CaptureSession {
     /**
      * 获得原始数据包内容, 供 16 进制查看
      */
-    const std::vector<PacketItem>& get_packets();
+    const std::vector<PacketItem>& get_packets() const;
 
     /**
      * 获得指定 id 的数据包的解析结果
      */
-    const PacketItem& get_packet_view(int id);
+    const PacketViewItem& get_packet_view(int id);
 
     // TODO: 路径类型不一定必须是 string, 可以按照方便改, 比如 FILE 也可以
     // TODO: 保存失败的返回细节 - 不一定必须是 bool, 可再议
@@ -152,12 +158,12 @@ class CaptureSession {
     /**
      * 保存到 pcap 文件
      */
-    bool dump_to_file_all(std::string path);
+    bool dump_to_file_all(const std::string& path);
 
     /**
      * 保存某一层的原始内容到文件
      */
-    bool dump_selected_frame(std::string frame_name, std::string path);
+    bool dump_selected_frame(const std::string& frame_name, const std::string& path);
 
     /**
      * 关闭当前 Session
