@@ -38,23 +38,23 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
         char buf[64];
         memset(buf, 0, sizeof(buf));
         for (auto a = b->addresses; a; a = a->next) {
-            AddressItem currAddr = *(new AddressItem());
+            AddressItem* currAddr = (new AddressItem());
             switch (a->addr->sa_family) {
                 case AF_INET:
-                    currAddr.type = "AF_INET";
+                    currAddr->type = "AF_INET";
                     if (a->addr) {
                         inet_ntop(AF_INET, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
-                        currAddr.addr = *(new std::string(buf));
+                        currAddr->addr = *(new std::string(buf));
                         memset(buf, 0, 100);
                     }
                     if (a->netmask) {
                         inet_ntop(AF_INET, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
-                        currAddr.mask = *(new std::string(buf));
+                        currAddr->mask = *(new std::string(buf));
                         memset(buf, 0, 100);
                     }
                     if (a->broadaddr) {
                         inet_ntop(AF_INET, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
-                        currAddr.broadcast_addr = *(new std::string(buf));
+                        currAddr->broadcast_addr = *(new std::string(buf));
                         memset(buf, 0, 100);
                     }
                     break;
@@ -62,15 +62,15 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
                 case AF_INET6:
                     if (a->addr) {
                         inet_ntop(AF_INET6, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
-                        currAddr.addr = *(new std::string(buf));
+                        currAddr->addr = *(new std::string(buf));
                         memset(buf, 0, 100);
                     }
                     break;
                 default:
-                    currAddr.type = "Unknown Address Type";
+                    currAddr->type = "Unknown Address Type";
                     break;
             }
-            currAddrList.push_back(currAddr);
+            currAddrList.push_back(*currAddr);
         }
         ret.push_back(nic);
     }
@@ -89,18 +89,18 @@ void CaptureSession::pcap_callback(u_char *argument, const struct pcap_pkthdr *p
 void CaptureSession::pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content) {
     std::vector<unsigned char> *content = new std::vector<unsigned char>(packet_header->caplen);
 
-    PacketItem curr = *(new PacketItem(*content));
+    PacketItem *curr = (new PacketItem(*content));
     auto thisPointer = (CaptureSession *)argument;
-    curr.id = thisPointer->cap_count++;
-    curr.cap_time = packet_header->ts.tv_sec + packet_header->ts.tv_usec * 0.000001;
-    curr.cap_len = packet_header->caplen;
-    curr.len = packet_header->len;
+    curr->id = thisPointer->cap_count++;
+    curr->cap_time = packet_header->ts.tv_sec + packet_header->ts.tv_usec * 0.000001;
+    curr->cap_len = packet_header->caplen;
+    curr->len = packet_header->len;
 
     for (size_t i = 0; i < packet_header->caplen; i++) {
         content->push_back(packet_content[i]);
     }
 
-    thisPointer->cap_packets.push_back(curr);
+    thisPointer->cap_packets.push_back(*curr);
 }
 
 bool CaptureSession::start_capture() {
