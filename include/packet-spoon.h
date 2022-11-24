@@ -59,6 +59,7 @@ private:
     NetworkInterface(const std::string &name, const std::string &friendly_name, bool is_loop_back, AddressItem* addrs) : name(name), friendly_name(friendly_name), is_loop_back(is_loop_back), addrs(addrs) {}
 };
 
+const std::string DEFAULT_NIC_NAME = "Default";
 /**
  * 原始数据包
  */
