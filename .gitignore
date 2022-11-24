@@ -65,3 +65,6 @@ cmake*
 # for now, since we cannot determine which dll should be packed
 # we chose to exclude everything inside ./build, to avoid expansion of repo size
 build/**
+
+
+tmp/
