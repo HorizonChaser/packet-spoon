@@ -7,6 +7,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <pcap.h>
 /*
 
 网卡信息的样例
@@ -27,24 +28,34 @@
 /**
  * 地址
  */
+
+const std::string DEFAULT_NIC_NAME = "Default";
+const std::string UNKNOWN_ADDR_TYPE = "Unknown Address Type";
+const std::string UNKNOWN_ADDR_STR = "Unknown Address";
+
 class AddressItem {
    public:
+    // friend class std::vector;
     std::string type;  // AF_INET for IPv4, AF_INET6 for IPv6
     std::string addr;  //地址
 
     // 下面两项在 IPv6 下不一定可用, 可能是空串
     std::string mask;            //掩码
     std::string broadcast_addr;  //广播地址
-
-   private:
+    static const AddressItem UNKNOWN_ADDR_IPV4;
+    static const AddressItem UNKNOWN_ADDR_IPV6;
+    static const AddressItem DEFAULT_ADDR;
+    // private:
     ~AddressItem() = default;
 };
+
 
 /**
  * 网卡信息
  */
 class NetworkInterface {
    public:
+    // friend class std::vector;
     std::string name;                 //类似第一行的设备路径
     std::string friendly_name;        //人类可读的名字
     bool is_loop_back;                //是否环回设备
@@ -59,19 +70,21 @@ class NetworkInterface {
      * 获得所有的网络接口
      */
     static std::vector<NetworkInterface> get_all_network_interfaces();
-
+    // private:
+    ~NetworkInterface() = default;
    private:
     NetworkInterface(std::vector<AddressItem>& in) : addrs(in) {}
     NetworkInterface(const std::string& name, const std::string& friendly_name, bool is_loop_back, std::vector<AddressItem>& addrs) : name(name), friendly_name(friendly_name), is_loop_back(is_loop_back), addrs(addrs) {}
-    ~NetworkInterface();
+    
 };
 
-const std::string DEFAULT_NIC_NAME = "Default";
+
 /**
  * 原始数据包
  */
 struct PacketItem {
    public:
+    // friend class std::vector;
     int id;                                     //序号, 保证和 PacketViewItem 的一一对应
     double cap_time;                            //捕获到的时刻, 相对开始捕获的时刻来说
     int cap_len;                                //捕获到的长度, 可能小于 Len, 即没能完全捕获
@@ -80,7 +93,7 @@ struct PacketItem {
 
     PacketItem(const std::vector<unsigned char>& c) : content(c) {}
 
-   private:
+//    private:
     ~PacketItem();
 };
 

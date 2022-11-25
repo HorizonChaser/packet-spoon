@@ -26,6 +26,7 @@ aux_source_directory(src/pcap PCAP_SRC_LIST)
 aux_source_directory(src/gui GUI_SRC_LIST)
 aux_source_directory(src/pcapDemo PCAP_DEMO_SRC_LIST)
 aux_source_directory(fake FAKE_SRC_LIST)
+aux_source_directory(src/utils UTILS_SRC_LIST)
 set( QT_HEADERS include/gui/mainwindow.h include/gui/netcarditemmodel.h )
 
 # add lib path
@@ -36,7 +37,7 @@ qt6_wrap_ui( UI_HEADERS ${CMAKE_SOURCE_DIR}/src/gui/mainwindow.ui )
 # set output path
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY 	${CMAKE_SOURCE_DIR}/build)
 
-add_executable(${CMAKE_PROJECT_NAME} WIN32 ${PCAP_SRC_LIST} ${GUI_SRC_LIST} ${QT_HEADERS} ${UI_HEADERS} ${FAKE_SRC_LIST})
+add_executable(${CMAKE_PROJECT_NAME} WIN32 ${PCAP_SRC_LIST} ${GUI_SRC_LIST} ${QT_HEADERS} ${UI_HEADERS} ${FAKE_SRC_LIST} ${UTILS_SRC_LIST})
 
 add_executable("pcap_demo" WIN32 ${PCAP_DEMO_SRC_LIST})
 
@@ -45,6 +46,7 @@ add_executable("pcap_demo" WIN32 ${PCAP_DEMO_SRC_LIST})
 # link lib file
 target_link_libraries(${CMAKE_PROJECT_NAME} Packet)
 target_link_libraries(${CMAKE_PROJECT_NAME} wpcap)
+target_link_libraries(${CMAKE_PROJECT_NAME} ws2_32)
 
 target_link_libraries("pcap_demo" Packet)
 target_link_libraries("pcap_demo" wpcap)

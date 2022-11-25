@@ -8,15 +8,42 @@
 #include <map>
 #include <string>
 #include <vector>
-//#ifndef NTDDI_VERSION
+#ifndef NTDDI_VERSION
 #define NTDDI_VERSION 0x0A00000A
-//#endif
+#endif
 
-//#ifndef _WIN32_WINNT
+#ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0A00
-//#endif
+#endif
 
+#ifndef _WIN32
 #define _WIN32
+#endif
+
+
+
+const AddressItem AddressItem::UNKNOWN_ADDR_IPV4 = {
+    "AF_INET",
+    UNKNOWN_ADDR_STR,
+    UNKNOWN_ADDR_STR,
+    UNKNOWN_ADDR_STR
+};
+
+const AddressItem AddressItem::UNKNOWN_ADDR_IPV6 = {
+    "AF_INET6",
+    UNKNOWN_ADDR_STR,
+    "",
+    ""
+};
+
+const AddressItem AddressItem::DEFAULT_ADDR = {
+    UNKNOWN_ADDR_TYPE,
+    "",
+    "",
+    ""
+};
+
+
 
 std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
     std::vector<NetworkInterface> ret;
@@ -60,6 +87,7 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
                     break;
 
                 case AF_INET6:
+                    currAddr->type = "AF_INET6";
                     if (a->addr) {
                         inet_ntop(AF_INET6, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
                         currAddr->addr = *(new std::string(buf));
@@ -67,7 +95,7 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
                     }
                     break;
                 default:
-                    currAddr->type = "Unknown Address Type";
+                    currAddr->type = UNKNOWN_ADDR_TYPE;
                     break;
             }
             currAddrList.push_back(*currAddr);
@@ -83,8 +111,8 @@ CaptureSession::CaptureSession(const NetworkInterface &nic) : curr_interface(nic
 CaptureSession::CaptureSession(const std::string &nic_name) : curr_interface(*(new NetworkInterface(nic_name))) {
 }
 
-void CaptureSession::pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content) {
-}
+// void CaptureSession::pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content) {
+// }
 
 void CaptureSession::pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content) {
     std::vector<unsigned char> *content = new std::vector<unsigned char>(packet_header->caplen);
@@ -113,6 +141,7 @@ bool CaptureSession::start_capture() {
     }
 
     pcap_loop(capHandle, -1, pcap_callback, (u_char *)this);
+    return true;
 }
 
 bool CaptureSession::start_capture(int cnt) {
