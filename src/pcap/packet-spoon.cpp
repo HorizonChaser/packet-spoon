@@ -62,7 +62,7 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
         nic.friendly_name = *(new std::string(b->description));
         nic.is_loop_back = (b->flags & PCAP_IF_LOOPBACK);
 
-        char buf[64];
+        char buf[100];
         memset(buf, 0, sizeof(buf));
         for (auto a = b->addresses; a; a = a->next) {
             AddressItem* currAddr = (new AddressItem());
@@ -99,8 +99,11 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
                     break;
             }
             currAddrList.push_back(*currAddr);
+
         }
+//        nic.addrs = currAddrList;
         ret.push_back(nic);
+
     }
     return ret;
 }

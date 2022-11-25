@@ -26,6 +26,7 @@ NetCardItemModel::NetCardItemModel(QObject *parent)
         name->appendRow(ipv4);
         name->appendRow(mask);
         name->appendRow(broadcast);
+        name->appendRow(ipv6);
         appendRow(name);
     }
     setHorizontalHeaderLabels(QStringList()<<QStringLiteral("网卡列表"));
