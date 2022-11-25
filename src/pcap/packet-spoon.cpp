@@ -20,30 +20,23 @@
 #define _WIN32
 #endif
 
-
-
 const AddressItem AddressItem::UNKNOWN_ADDR_IPV4 = {
     "AF_INET",
     UNKNOWN_ADDR_STR,
     UNKNOWN_ADDR_STR,
-    UNKNOWN_ADDR_STR
-};
+    UNKNOWN_ADDR_STR};
 
 const AddressItem AddressItem::UNKNOWN_ADDR_IPV6 = {
     "AF_INET6",
     UNKNOWN_ADDR_STR,
     "",
-    ""
-};
+    ""};
 
 const AddressItem AddressItem::DEFAULT_ADDR = {
     UNKNOWN_ADDR_TYPE,
     "",
     "",
-    ""
-};
-
-
+    ""};
 
 std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
     std::vector<NetworkInterface> ret;
@@ -56,31 +49,36 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
     }
 
     for (auto b = alldevs; b; b = b->next) {
-        std::vector<AddressItem> currAddrList = *(new std::vector<AddressItem>());
-        NetworkInterface nic = *(new NetworkInterface(currAddrList));
-        nic.name = *(new std::string(b->name));
-        nic.friendly_name = *(new std::string(b->description));
-        nic.is_loop_back = (b->flags & PCAP_IF_LOOPBACK);
+        std::vector<AddressItem> *currAddrList = (new std::vector<AddressItem>());
+        NetworkInterface *nic = (new NetworkInterface(*currAddrList));
+        nic->name = *(new std::string(b->name));
+        nic->friendly_name = *(new std::string(b->description));
+        nic->is_loop_back = (b->flags & PCAP_IF_LOOPBACK);
 
         char buf[100];
         memset(buf, 0, sizeof(buf));
         for (auto a = b->addresses; a; a = a->next) {
-            AddressItem* currAddr = (new AddressItem());
+            AddressItem *currAddr = (new AddressItem());
             switch (a->addr->sa_family) {
                 case AF_INET:
                     currAddr->type = "AF_INET";
                     if (a->addr) {
-                        inet_ntop(AF_INET, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
+                        auto res = inet_ntoa(((struct sockaddr_in *)a->addr)->sin_addr);
+                        memcpy(buf, res, strlen(res));
                         currAddr->addr = *(new std::string(buf));
                         memset(buf, 0, 100);
                     }
                     if (a->netmask) {
-                        inet_ntop(AF_INET, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
+                        // inet_ntop(AF_INET, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
+                        auto res = inet_ntoa(((struct sockaddr_in *)a->addr)->sin_addr);
+                        memcpy(buf, res, strlen(res));
                         currAddr->mask = *(new std::string(buf));
                         memset(buf, 0, 100);
                     }
                     if (a->broadaddr) {
-                        inet_ntop(AF_INET, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
+                        // inet_ntop(AF_INET, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
+                        auto res = inet_ntoa(((struct sockaddr_in *)a->addr)->sin_addr);
+                        memcpy(buf, res, strlen(res));
                         currAddr->broadcast_addr = *(new std::string(buf));
                         memset(buf, 0, 100);
                     }
@@ -89,8 +87,8 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
                 case AF_INET6:
                     currAddr->type = "AF_INET6";
                     if (a->addr) {
-                        inet_ntop(AF_INET6, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
-                        currAddr->addr = *(new std::string(buf));
+                        // inet_ntop(AF_INET6, &((struct sockaddr_in *)a->addr)->sin_addr.s_addr, buf, 100);
+                        // currAddr->addr = *(new std::string(buf));
                         memset(buf, 0, 100);
                     }
                     break;
@@ -98,33 +96,29 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
                     currAddr->type = UNKNOWN_ADDR_TYPE;
                     break;
             }
-            currAddrList.push_back(*currAddr);
-
+            currAddrList->push_back(*currAddr);
         }
-//        nic.addrs = currAddrList;
-        ret.push_back(nic);
-
+        ret.push_back(*nic);
     }
     return ret;
 }
 
-NetworkInterface::NetworkInterface(const std::string & name) : addrs(*(new std::vector<AddressItem>())) {
-    this->name =  *(new std::string(name));
+NetworkInterface::NetworkInterface(const std::string &name) : addrs(*(new std::vector<AddressItem>())) {
+    this->name = *(new std::string(name));
 }
 
 CaptureSession::CaptureSession(const NetworkInterface &nic) : curr_interface(nic) {
+    this->cap_count = 0;
 }
 
 CaptureSession::CaptureSession(const std::string &nic_name) : curr_interface(*(new NetworkInterface(nic_name))) {
+    this->cap_count = 0;
 }
 
-// void CaptureSession::pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content) {
-// }
-
 void CaptureSession::pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content) {
-    std::vector<unsigned char> *content = new std::vector<unsigned char>(packet_header->caplen);
+    auto *content = new std::vector<unsigned char>();
 
-    PacketItem *curr = (new PacketItem(*content));
+    auto *curr = (new PacketItem(*content));
     auto thisPointer = (CaptureSession *)argument;
     curr->id = thisPointer->cap_count++;
     curr->cap_time = packet_header->ts.tv_sec + packet_header->ts.tv_usec * 0.000001;
@@ -136,6 +130,9 @@ void CaptureSession::pcap_callback(u_char *argument, const struct pcap_pkthdr *p
     }
 
     thisPointer->cap_packets.push_back(*curr);
+    if (thisPointer->status < 0) {
+        pcap_breakloop(thisPointer->cap_handle);
+    }
 }
 
 bool CaptureSession::start_capture() {
@@ -147,7 +144,7 @@ bool CaptureSession::start_capture() {
         return false;
     }
 
-    pcap_loop(capHandle, -1, pcap_callback, (u_char *)this);
+    this->loop_ret = pcap_loop(capHandle, -1, pcap_callback, (u_char *)this);
     return true;
 }
 
@@ -166,11 +163,16 @@ bool CaptureSession::start_capture(int cnt) {
 }
 
 bool CaptureSession::stop_capture() {
-    // FIXME: 多线程下可能不能正确结束
+    // FIXED: 多线程下可能不能正确结束
     //如果如此, 则使用pacp_next_ex()配合轮询停止位进行判断终止
-    pcap_breakloop(this->cap_handle);
+    // UPDATE: 已确认, 可以正常使用
+    status = -1;
     if (this->loop_ret == PCAP_ERROR_BREAK) {
         return false;
     }
     return true;
+}
+
+const std::vector<PacketItem> &CaptureSession::get_packets() const {
+    return this->cap_packets;
 }
