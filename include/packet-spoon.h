@@ -61,7 +61,7 @@ class NetworkInterface {
     bool is_loop_back;                //是否环回设备
     std::vector<AddressItem>& addrs;  //地址列表, 一个网卡可能有多个地址
 
-    NetworkInterface(const std::string&);
+    explicit NetworkInterface(const std::string&);
     NetworkInterface(const NetworkInterface& ni) = default;
     NetworkInterface(NetworkInterface&& ni) = default;
     NetworkInterface& operator=(const NetworkInterface& another) = default;
@@ -94,7 +94,7 @@ struct PacketItem {
     PacketItem(const std::vector<unsigned char>& c) : content(c) {}
 
 //    private:
-    ~PacketItem();
+    ~PacketItem(){}
 };
 
 /**

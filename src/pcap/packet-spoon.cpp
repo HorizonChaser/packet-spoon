@@ -105,6 +105,10 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
     return ret;
 }
 
+NetworkInterface::NetworkInterface(const std::string & name) : addrs(*(new std::vector<AddressItem>())) {
+    this->name =  *(new std::string(name));
+}
+
 CaptureSession::CaptureSession(const NetworkInterface &nic) : curr_interface(nic) {
 }
 
