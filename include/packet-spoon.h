@@ -48,7 +48,7 @@ public:
     static const AddressItem DEFAULT_ADDR;
 
     // private:
-
+    ~AddressItem() = default;
 };
 
 
@@ -60,14 +60,20 @@ public:
     // friend class std::vector;
     std::string name;                 //类似第一行的设备路径
     std::string friendly_name;        //人类可读的名字
-    bool is_loop_back;                //是否环回设备
-    std::vector<AddressItem> &addrs;  //地址列表, 一个网卡可能有多个地址
+    bool is_loop_back{};                //是否环回设备
+    std::vector<AddressItem> addrs;  //地址列表, 一个网卡可能有多个地址
+
+public:
+
+    NetworkInterface() = default;
 
     explicit NetworkInterface(const std::string &);
 
     NetworkInterface(const NetworkInterface &ni) = default;
 
     NetworkInterface(NetworkInterface &&ni) = default;
+
+    explicit NetworkInterface(std::vector<AddressItem> &in) : addrs(in) {}
 
     NetworkInterface &operator=(const NetworkInterface &another) = delete;
 
@@ -77,8 +83,6 @@ public:
     static std::vector<NetworkInterface> get_all_network_interfaces();
 
     ~NetworkInterface();
-
-    NetworkInterface(std::vector<AddressItem> &in) : addrs(in) {}
 
     NetworkInterface(const std::string &name, const std::string &friendly_name, bool is_loop_back,
                      std::vector<AddressItem> &addrs) : name(name), friendly_name(friendly_name),
@@ -99,7 +103,7 @@ public:
     uint32_t len;                                    //真实长度
     const std::vector<unsigned char> &content;  //原始内容
 
-    PacketItem(const std::vector<unsigned char> &c) : content(c) {}
+    explicit PacketItem(const std::vector<unsigned char> &c) : content(c) {}
 
 //    private:
     ~PacketItem() = default;
@@ -137,7 +141,7 @@ public:
 class CaptureSession {
 public:
     volatile uint32_t cap_count;                  //当前已经捕获多少个包, 允许并发读取
-    uint32_t cap_target;                          //目标捕获的包数, <0 则无限制
+    uint32_t cap_target;                          //目标捕获的包数, 0 则无限制
     const NetworkInterface &curr_interface;  //当前被选中的网卡
     double cap_started_at;                   //捕获开始时间
     double cap_ended_at;                     //捕获结束时间
@@ -155,7 +159,7 @@ public:
 
     explicit CaptureSession(const NetworkInterface &selected_nic) : curr_interface(selected_nic) {}
 
-    CaptureSession(const std::string &selected_nic_name);
+    explicit CaptureSession(const std::string &selected_nic_name);
 
     /**
      * 开始捕获, 需要手动调用 stop_capture() 结束
@@ -308,8 +312,6 @@ public:
 
         return ret;
     }
-
-
 };
 
 class Parsers {
@@ -318,10 +320,11 @@ public:
 
 private:
     static std::string nextSuggestedParser;
+    static bool isInitialized;
+    static uint32_t externalParserPos;
 
     static std::pair<ParsedFrame, uint32_t>
     ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem);
-
 
     static std::pair<ParsedFrame, uint32_t>
     ipv4Parser(const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem);
@@ -352,14 +355,21 @@ private:
 
     Parsers() = default;
 
-    //explicit Parsers(const std::vector<std::pair<std::string, std::string>> &paths);
-
 public:
     static std::map<std::string, decltype(&ipv4Parser)> internalParsers;
     static std::map<std::string, std::string> externalParsers;
 
     static void initParsers();
-    bool addExternalParser(const std::string &path);
+
+    static void initParsers(const std::vector<std::pair<std::string, std::string>> &paths);
+
+    static std::pair<bool, std::string>
+    externalParserWrapper(const std::string &parserModule, const std::string &parserFunc,
+                          const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem);
+
+    static bool addExternalParser(const std::string &path, const std::string &name);
+
+    static bool checkParserPresent(const std::string &name);
 };
 
 #endif  // DEMO_PACKET_SPOON_H
