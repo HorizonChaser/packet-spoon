@@ -267,6 +267,7 @@ const PacketViewItem &CaptureSession::get_packet_view(int id) {
     const auto &vec = this->cap_packets[id].content;
     std::pair<ParsedFrame, uint32_t> ret;
     ret = Parsers::ethernetParser(vec, 0, *packetViewItem);
+    Parsers::externalParserPos = ret.second;
 
     while (Parsers::nextSuggestedParser != ("null")) {
         auto nextInternalParser = Parsers::internalParsers.find(Parsers::nextSuggestedParser);
@@ -388,7 +389,7 @@ Parsers::ipv4Parser(const std::vector<unsigned char> &vec, uint32_t pos, PacketV
     //TODO add proto switch for transport layer
     Parsers::nextSuggestedParser = "tcpParser";
 
-    packetViewItem.protocol = "IPV4";
+    packetViewItem.protocol = "IPv4";
     packetViewItem.source.addr = Tools::ipv4BytesToString(vec, pos + 12);
     packetViewItem.target.addr = Tools::ipv4BytesToString(vec, pos + 16);
 
@@ -422,10 +423,10 @@ Parsers::wolParser(const std::vector<unsigned char> &vec, uint32_t pos, PacketVi
 void Parsers::initParsers() {
     typedef std::pair<std::string, decltype(&ipv4Parser)> MapPair;
     if (!isInitialized) {
-        Parsers::internalParsers.insert(MapPair("ipv4Parser", &(Parsers::ipv4Parser)));
-        Parsers::internalParsers.insert(MapPair("ipv6Parser", &Parsers::ipv6Parser));
-        Parsers::internalParsers.insert(MapPair("wolParser", &Parsers::wolParser));
-        Parsers::internalParsers.insert(MapPair("dummyParser", &Parsers::dummyParser));
+        Parsers::internalParsers.insert(MapPair("ipv4Parser", Parsers::ipv4Parser));
+        Parsers::internalParsers.insert(MapPair("ipv6Parser", Parsers::ipv6Parser));
+        Parsers::internalParsers.insert(MapPair("wolParser", Parsers::wolParser));
+        Parsers::internalParsers.insert(MapPair("dummyParser", Parsers::dummyParser));
         isInitialized = true;
     }
 }
@@ -463,10 +464,13 @@ Parsers::ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, Pac
         Parsers::nextSuggestedParser = "ipv4Parser";
     } else if (vec[12] == 0x86 && vec[13] == 0xDD) {
         l3Proto = IPv6;
+        Parsers::nextSuggestedParser = "dummyParser";
     } else if (vec[12] == 0x08 && vec[13] == 0x06) {
         l3Proto = ARP;
+        Parsers::nextSuggestedParser = "dummyParser";
     } else if (vec[12] == 0x08 && vec[13] == 0x42) {
         l3Proto = WoL;
+        Parsers::nextSuggestedParser = "dummyParser";
     }
 
     auto l2Src = new FrameTuple("Source MAC Address", macSrc, 0, 5);
