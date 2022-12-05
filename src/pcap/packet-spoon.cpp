@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
 #ifndef NTDDI_VERSION
 #define NTDDI_VERSION 0x0A00000A
 #endif
@@ -38,23 +40,11 @@ bool Parsers::isInitialized = false;
 uint32_t Parsers::externalParserPos = 0;
 
 
-const AddressItem AddressItem::UNKNOWN_ADDR_IPV4 = {
-        "AF_INET",
-        UNKNOWN_ADDR_STR,
-        UNKNOWN_ADDR_STR,
-        UNKNOWN_ADDR_STR};
+const AddressItem AddressItem::UNKNOWN_ADDR_IPV4 = {"AF_INET", UNKNOWN_ADDR_STR, UNKNOWN_ADDR_STR, UNKNOWN_ADDR_STR};
 
-const AddressItem AddressItem::UNKNOWN_ADDR_IPV6 = {
-        "AF_INET6",
-        UNKNOWN_ADDR_STR,
-        "",
-        ""};
+const AddressItem AddressItem::UNKNOWN_ADDR_IPV6 = {"AF_INET6", UNKNOWN_ADDR_STR, "", ""};
 
-const AddressItem AddressItem::DEFAULT_ADDR = {
-        UNKNOWN_ADDR_TYPE,
-        "",
-        "",
-        ""};
+const AddressItem AddressItem::DEFAULT_ADDR = {UNKNOWN_ADDR_TYPE, "", "", ""};
 
 std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
     std::vector<NetworkInterface> ret;
@@ -65,7 +55,6 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
         fprintf(stderr, "Error in pcap_findalldevs: %s\n", errBuf);
         return ret;
     }
-
     if (alldevs == nullptr) {
         return ret;
     }
@@ -76,7 +65,6 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
         nic->name = *(new std::string(b->name));
         nic->friendly_name = *(new std::string(b->description));
         nic->is_loop_back = (b->flags & PCAP_IF_LOOPBACK);
-
 
         char buf[100];
         memset(buf, 0, sizeof(buf));
@@ -125,6 +113,7 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
         }
         ret.push_back(*nic);
     }
+    pcap_freealldevs(alldevs);
     return ret;
 }
 
@@ -133,8 +122,7 @@ NetworkInterface::NetworkInterface(const std::string &name) : addrs(*(new std::v
     this->is_loop_back = false;
 }
 
-NetworkInterface::~NetworkInterface() {
-}
+NetworkInterface::~NetworkInterface() = default;
 
 CaptureSession::CaptureSession(const std::string &nic_name) : curr_interface(*(new NetworkInterface(nic_name))) {
     this->cap_count = 0;
@@ -151,13 +139,13 @@ CaptureSession::pcap_callback(u_char *argument, const struct pcap_pkthdr *packet
     curr->cap_len = packet_header->caplen;
     curr->len = packet_header->len;
 
-    std::cout << "caped!" << std::endl;
-
+    //TODO 预分配空间
     for (size_t i = 0; i < packet_header->caplen; i++) {
         content->push_back(packet_content[i]);
     }
-
     thisPointer->cap_packets.push_back(*curr);
+
+    //如果被中断, 或在已设定目标数量的前提下抓到了足够的包, 则可退出
     if (thisPointer->status < 0 ||
         ((thisPointer->cap_target > 0) && (thisPointer->cap_count >= thisPointer->cap_target))) {
         pcap_breakloop(thisPointer->cap_handle);
@@ -227,13 +215,12 @@ bool CaptureSession::dump_to_file_all(const std::string &path) const {
         uint32_t SNAP_LEN = 0xFFFF0000;
         uint32_t LINK_TYPE = 0x1;
     };
-
     PCAP_HEADER header;
 
     //TODO 大小写匹配
     if (this->curr_interface.friendly_name.length() &&
         this->curr_interface.friendly_name.find("WiFi") != std::string::npos) {
-        header.LINK_TYPE = 0x105;//802.11 WiFi protocol
+        header.LINK_TYPE = 0x105; //802.11 WiFi protocol
     }
 
     outFileStream.write((char *) &header, sizeof(header));
@@ -258,19 +245,17 @@ bool CaptureSession::dump_to_file_all(const std::string &path) const {
             outFileStream << data;
         }
     }
-
     return true;
 }
 
 bool CaptureSession::close() {
     pcap_close(this->cap_handle);
     this->status = -2;
-
     return true;
 }
 
 const PacketViewItem &CaptureSession::get_packet_view(int id) {
-    //如果已经有解析了的内容
+    //如果已经有当前数据包的解析结果
     if (this->cap_packets_view.find(id) != this->cap_packets_view.end()) {
         return this->cap_packets_view.find(id)->second;
     }
@@ -278,7 +263,6 @@ const PacketViewItem &CaptureSession::get_packet_view(int id) {
     auto packetViewItem = new PacketViewItem();
     packetViewItem->id = id;
     packetViewItem->cap_time = this->get_packet(id).cap_time;
-
 
     const auto &vec = this->cap_packets[id].content;
     std::pair<ParsedFrame, uint32_t> ret;
@@ -291,10 +275,10 @@ const PacketViewItem &CaptureSession::get_packet_view(int id) {
             Parsers::externalParserPos = ret.second;
             continue;
         }
-        auto nextExteralParser = Parsers::externalParsers.find(Parsers::nextSuggestedParser);
-        if (nextExteralParser != Parsers::externalParsers.end()) {
+        auto nextExternalParser = Parsers::externalParsers.find(Parsers::nextSuggestedParser);
+        if (nextExternalParser != Parsers::externalParsers.end()) {
             auto xxx = nextInternalParser->second;
-            auto exRet = Parsers::externalParserWrapper(nextExteralParser->second, "tcpParser", vec,
+            auto exRet = Parsers::externalParserWrapper(nextExternalParser->second, nextExternalParser->first, vec,
                                                         Parsers::externalParserPos, *packetViewItem);
             continue;
         }
@@ -305,8 +289,37 @@ const PacketViewItem &CaptureSession::get_packet_view(int id) {
     return *packetViewItem;
 }
 
-bool CaptureSession::dump_selected_frame(const std::string &frame_name, const std::string &path) {
+bool CaptureSession::dump_selected_frame(int id, const std::string &frame_name, const std::string &path) {
+    const auto &view = get_packet_view(id).detail;
+    for (const auto &cFrame: view) {
+        if (cFrame.name == frame_name) {
+            std::ofstream outFileStream(path, std::ios::out | std::ios::binary);
+            if (cFrame.frame.empty()) {
+                return false;
+            }
+            uint32_t beginPos = std::get<2>(cFrame.frame[0]);
+            uint32_t endPos = std::get<3>(cFrame.frame.back());
+            for (uint32_t i = beginPos; i <= endPos; ++i) {
+                outFileStream << get_packet(id).content[i];
+            }
+            return true;
+        }
+    }
     return false;
+}
+
+bool CaptureSession::dump_range_to_file(int id, const std::string &path, uint32_t beginPos, uint32_t endPos) {
+    const auto &view = get_packet_view(id).detail;
+
+    std::ofstream outFileStream(path, std::ios::out | std::ios::binary);
+    if (endPos >= get_packet(id).content.size()) {
+        return false;
+    }
+
+    for (uint32_t i = beginPos; i <= endPos; ++i) {
+        outFileStream << get_packet(id).content[i];
+    }
+    return true;
 }
 
 std::pair<ParsedFrame, uint32_t>
@@ -365,7 +378,7 @@ Parsers::ipv4Parser(const std::vector<unsigned char> &vec, uint32_t pos, PacketV
     frame->frame.push_back(
             *(new FrameTuple("Destination: ", Tools::ipv4BytesToString(vec, pos + 16), pos + 16, pos + 20)));
 
-    //如果还有选项, 即IP头总长度大于20字节
+    //如果还有选项, 即 IP 头总长度大于 20 字节
     if (headerLen > 20) {
         frame->frame.push_back(
                 *(new FrameTuple("Options: ", Tools::hexBytesToString(vec, pos + 20, headerLen - 20), pos + 20,
@@ -403,12 +416,6 @@ Parsers::wolParser(const std::vector<unsigned char> &vec, uint32_t pos, PacketVi
     return Parsers::dummyParser(vec, pos, packetViewItem);
 }
 
-std::pair<ParsedFrame, uint32_t>
-Parsers::tcpParser(const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem) {
-
-    return {};
-}
-
 /**
  * 初始化 Parsers, 添加 Internal Parsers
  */
@@ -423,17 +430,11 @@ void Parsers::initParsers() {
     }
 }
 
-/**
- * 添加新的 External Parser
- * @param path
- * @return
- */
 bool Parsers::addExternalParser(const std::string &path, const std::string &name) {
     if (checkParserPresent(name)) {
         return false;
     }
     externalParsers.insert(std::pair<std::string, std::string>(path, name));
-
     return true;
 }
 
@@ -496,10 +497,6 @@ Parsers::ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, Pac
     return std::pair<ParsedFrame, uint32_t>(*ethernetFrame, (uint32_t) 14);
 }
 
-/**
- * 初始化 Parsers
- * @param paths std::pair, 第一个是解析器的名称, 第二个是文件名 (必须在可执行文件的 pyParsers/ 下)
- */
 void Parsers::initParsers(const std::vector<std::pair<std::string, std::string>> &paths) {
     if (!isInitialized) {
         initParsers();
@@ -510,9 +507,8 @@ void Parsers::initParsers(const std::vector<std::pair<std::string, std::string>>
 }
 
 std::pair<bool, std::string>
-Parsers::externalParserWrapper(const std::string &parserModule, const std::string &parserFunc,
-                               const std::vector<unsigned char> &vec, uint32_t pos,
-                               PacketViewItem &packetViewItem) {
+Parsers::externalParserWrapper(std::string parserModule, std::string parserFunc, const std::vector<unsigned char> &vec,
+                               uint32_t pos, PacketViewItem &packetViewItem) {
     Py_Initialize();
     PyRun_SimpleString("import sys");
     PyRun_SimpleString("sys.path.append('./')");
@@ -529,9 +525,9 @@ Parsers::externalParserWrapper(const std::string &parserModule, const std::strin
     for (int i = 0; i < vec.size(); ++i) {
         mem[i] = vec[i];
     }
-    PyObject *byteArr = PyBytes_FromStringAndSize(mem, vec.size());
-    PyObject *pFunc = PyObject_GetAttrString(pModule, parserFunc.c_str());
-    PyObject *pArgs = PyTuple_New(2);
+    PyObject * byteArr = PyBytes_FromStringAndSize(mem, vec.size());
+    PyObject * pFunc = PyObject_GetAttrString(pModule, parserFunc.c_str());
+    PyObject * pArgs = PyTuple_New(2);
     PyTuple_SetItem(pArgs, 1, Py_BuildValue("i", pos));
     PyTuple_SetItem(pArgs, 0, byteArr);
 
@@ -541,7 +537,7 @@ Parsers::externalParserWrapper(const std::string &parserModule, const std::strin
     }
 
     auto ret = PyObject_CallObject(pFunc, pArgs);
-    PyObject *ptype, *pvalue, *ptraceback;
+    PyObject * ptype, *pvalue, *ptraceback;
     char *pStrErrorMessage;
     if (PyErr_Occurred()) {
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
@@ -625,10 +621,8 @@ Parsers::externalParserWrapper(const std::string &parserModule, const std::strin
 
     const auto &frames = document["frames"];
     for (int i = 0; i < frameCount; ++i) {
-        newFrame->frame.emplace_back(frames[i]["key"].GetString(),
-                                     frames[i]["val"].GetString(),
-                                     frames[i]["posBegin"].GetInt(),
-                                     frames[i]["posEnd"].GetInt());
+        newFrame->frame.emplace_back(frames[i]["key"].GetString(), frames[i]["val"].GetString(),
+                                     frames[i]["posBegin"].GetInt(), frames[i]["posEnd"].GetInt());
     }
 
     packetViewItem.detail.push_back(*newFrame);
@@ -639,3 +633,5 @@ Parsers::externalParserWrapper(const std::string &parserModule, const std::strin
 bool Parsers::checkParserPresent(const std::string &name) {
     return internalParsers.find(name) != internalParsers.end() || externalParsers.find(name) != externalParsers.end();
 }
+
+#pragma clang diagnostic pop
