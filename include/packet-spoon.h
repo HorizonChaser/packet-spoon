@@ -365,10 +365,10 @@ public:
 class Parsers {
 public:
     friend class CaptureSession;
-
+    static bool isInitialized;
 private:
     static std::string nextSuggestedParser;
-    static bool isInitialized;
+
     static uint32_t externalParserPos;
 
     static std::pair<ParsedFrame, uint32_t>
