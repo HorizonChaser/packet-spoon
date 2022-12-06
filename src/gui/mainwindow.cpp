@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->if_table->selectionModel(),&QItemSelectionModel::currentChanged,this,&MainWindow::slotIfTableCurrentChanged);
     connect(ui->if_table->selectionModel(),&QItemSelectionModel::currentRowChanged,this,&MainWindow::slotIfTableCurrentRowChanged);
     connect(this, &MainWindow::signalSelectNIC, this, &MainWindow::slotSelectNIC);
+    connect(ui->capture_page, &CapPage::goBackSignal, this, &MainWindow::onCapPageBack);
 }
 
 MainWindow::~MainWindow()
@@ -38,6 +39,7 @@ void MainWindow::slotSelectNIC(const QString &nic_name){
 
     printf("using nic %s\n", nic_name.toStdString().c_str());
     fflush(stdout);
+    reinterpret_cast<CapPage*>(ui->capture_page)->open_session(nic_name);
     QMessageBox::information(this, "提示", "using nic " + nic_name);
 }
 
@@ -82,4 +84,8 @@ void MainWindow::slotIfTableCurrentRowChanged(const QModelIndex &current, const 
             }
         }
     }
+}
+
+void MainWindow::onCapPageBack() {
+    ui->stackedWidget->setCurrentIndex(0);
 }

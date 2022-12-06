@@ -20,6 +20,9 @@ public:
 signals:
     void signalSelectNIC(const QString &nic_name);
 
+public slots:
+    void onCapPageBack();
+
 private slots:
     void slotSelectNIC(const QString &nic_name);
     void on_pushButton_clicked();

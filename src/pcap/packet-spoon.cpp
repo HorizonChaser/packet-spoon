@@ -123,7 +123,7 @@ NetworkInterface::NetworkInterface(const std::string &name) : addrs(*(new std::v
 }
 
 NetworkInterface::~NetworkInterface() {
-    delete &(this->addrs);
+//    delete &(this->addrs);
 }
 
 CaptureSession::CaptureSession(const std::string &nic_name) : curr_interface(*(new NetworkInterface(nic_name))) {
