@@ -59,6 +59,9 @@ cmake*
 *.dll
 .qt
 
+# exclude libs
+!lib/**
+
 # CMake still available
 !CMakeLists.txt
 

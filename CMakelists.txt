@@ -68,3 +68,11 @@ target_include_directories("pcap_demo" PUBLIC
         "${PROJECT_BINARY_DIR}"
         "include"
         )
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_SOURCE_DIR}/lib/py/python3.dll $<TARGET_FILE_DIR:${PROJECT_NAME}>/python3.dll)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_SOURCE_DIR}/lib/py/python311.dll $<TARGET_FILE_DIR:${PROJECT_NAME}>/python311.dll)
