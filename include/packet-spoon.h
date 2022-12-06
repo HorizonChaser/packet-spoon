@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
 #ifndef DEMO_PACKET_SPOON_H
 #define DEMO_PACKET_SPOON_H
 
@@ -48,7 +50,7 @@ public:
     static const AddressItem DEFAULT_ADDR;
 
     // private:
-
+    ~AddressItem() = default;
 };
 
 
@@ -60,14 +62,20 @@ public:
     // friend class std::vector;
     std::string name;                 //类似第一行的设备路径
     std::string friendly_name;        //人类可读的名字
-    bool is_loop_back;                //是否环回设备
-    std::vector<AddressItem> &addrs;  //地址列表, 一个网卡可能有多个地址
+    bool is_loop_back{};                //是否环回设备
+    std::vector<AddressItem> addrs;  //地址列表, 一个网卡可能有多个地址
+
+public:
+
+    NetworkInterface() = default;
 
     explicit NetworkInterface(const std::string &);
 
     NetworkInterface(const NetworkInterface &ni) = default;
 
     NetworkInterface(NetworkInterface &&ni) = default;
+
+    explicit NetworkInterface(std::vector<AddressItem> &in) : addrs(in) {}
 
     NetworkInterface &operator=(const NetworkInterface &another) = delete;
 
@@ -77,8 +85,6 @@ public:
     static std::vector<NetworkInterface> get_all_network_interfaces();
 
     ~NetworkInterface();
-
-    NetworkInterface(std::vector<AddressItem> &in) : addrs(in) {}
 
     NetworkInterface(const std::string &name, const std::string &friendly_name, bool is_loop_back,
                      std::vector<AddressItem> &addrs) : name(name), friendly_name(friendly_name),
@@ -99,7 +105,7 @@ public:
     uint32_t len;                                    //真实长度
     const std::vector<unsigned char> &content;  //原始内容
 
-    PacketItem(const std::vector<unsigned char> &c) : content(c) {}
+    explicit PacketItem(const std::vector<unsigned char> &c) : content(c) {}
 
 //    private:
     ~PacketItem() = default;
@@ -137,7 +143,7 @@ public:
 class CaptureSession {
 public:
     volatile uint32_t cap_count;                  //当前已经捕获多少个包, 允许并发读取
-    uint32_t cap_target;                          //目标捕获的包数, <0 则无限制
+    uint32_t cap_target;                          //目标捕获的包数, 0 则无限制
     const NetworkInterface &curr_interface;  //当前被选中的网卡
     double cap_started_at;                   //捕获开始时间
     double cap_ended_at;                     //捕获结束时间
@@ -155,7 +161,7 @@ public:
 
     explicit CaptureSession(const NetworkInterface &selected_nic) : curr_interface(selected_nic) {}
 
-    CaptureSession(const std::string &selected_nic_name);
+    explicit CaptureSession(const std::string &selected_nic_name);
 
     /**
      * 开始捕获, 需要手动调用 stop_capture() 结束
@@ -175,12 +181,6 @@ public:
     bool stop_capture();
 
     /**
-     * 开始解析所有数据包
-     * DELETED
-     */
-    // bool start_analysis();
-
-    /**
      * 获得所有原始数据包内容, 供 16 进制查看
      */
     const std::vector<PacketItem> &get_packets() const;
@@ -195,9 +195,6 @@ public:
      */
     const PacketViewItem &get_packet_view(int id);
 
-    // TODO: 路径类型不一定必须是 string, 可以按照方便改, 比如 FILE 也可以
-    // TODO: 保存失败的返回细节 - 不一定必须是 bool, 可再议
-
     /**
      * 保存到 pcap 文件
      */
@@ -206,7 +203,17 @@ public:
     /**
      * 保存某一层的原始内容到文件
      */
-    bool dump_selected_frame(const std::string &frame_name, const std::string &path);
+    bool dump_selected_frame(int id, const std::string &frame_name, const std::string &path);
+
+    /**
+     * 导出指定范围的内容到文件
+     * @param id 数据包编号
+     * @param path 文件路径
+     * @param beginPos 起点
+     * @param endPos 结束点
+     * @return 是否成功
+     */
+    bool dump_range_to_file(int id, const std::string &path, uint32_t beginPos, uint32_t endPos);
 
     /**
      * 关闭当前 Session
@@ -214,6 +221,10 @@ public:
      */
     bool close();
 
+    /**
+     * 返回 double 格式的时间戳, 单位为秒
+     * @return double 格式的时间戳, 单位为秒
+     */
     static double get_time_double() {
         auto time = std::chrono::system_clock::now().time_since_epoch();
         std::chrono::seconds seconds = std::chrono::duration_cast<std::chrono::seconds>(time);
@@ -222,6 +233,12 @@ public:
     }
 
 private:
+    /**
+     * pcap_loop() 的回调函数, 数据包捕获动作的核心
+     * @param argument pcap 传递给我们的参数, 实际是一个指向当前 Session 的指针
+     * @param packet_header 数据包头
+     * @param packet_content 数据包内容
+     */
     static void pcap_callback(u_char *argument, const struct pcap_pkthdr *packet_header, const u_char *packet_content);
 };
 
@@ -229,6 +246,12 @@ class Tools {
 
 public:
 
+    /**
+     * 把一个字节转换为两个 ASCII 字符, 高位在前.
+     * 例如 0xFA 会得到 'F', 'A'
+     * @param in 输入的字节
+     * @return 两个字符, 高位在前
+     */
     static inline std::pair<char, char> hexBytesToCharPair(unsigned char in) {
         char hi, lo;
         int val = in;
@@ -252,7 +275,13 @@ public:
         return ret;
     }
 
-    static std::string macBytesToString(const std::vector<unsigned char> &vec, int pos) {
+    /**
+     * 把连续的 6 个字节作为 MAC 地址, 返回字符串
+     * @param vec 原始字节容器
+     * @param pos 起点
+     * @return MAC 字符串
+     */
+    static std::string macBytesToString(const std::vector<unsigned char> &vec, uint32_t pos) {
         std::string ret;
         for (int i = 0; i < 6; ++i) {
             auto c = hexBytesToCharPair(vec[pos + i]);
@@ -266,7 +295,13 @@ public:
         return ret;
     }
 
-    static std::string ipv4BytesToString(const std::vector<unsigned char> &vec, int pos) {
+    /**
+     * 把连续的 4 个字节作为 IPv4 地址解析并返回字符串
+     * @param vec 原始字节容器
+     * @param pos 解析起点
+     * @return IPv4 字符串
+     */
+    static std::string ipv4BytesToString(const std::vector<unsigned char> &vec, uint32_t pos) {
         std::string ret;
         for (int i = 0; i < 4; ++i) {
             ret.append(std::to_string(vec[pos + i]));
@@ -278,7 +313,14 @@ public:
         return ret;
     }
 
-    static std::string ipv6BytesToString(const std::vector<unsigned char> &vec, int pos) {
+    /**
+     * 把连续的 16 个字节作为 IPv6 地址解析并返回字符串
+     * 不满足缩写规则
+     * @param vec 原始字节容器
+     * @param pos 解析起点
+     * @return IPv6 字符串
+     */
+    static std::string ipv6BytesToString(const std::vector<unsigned char> &vec, uint32_t pos) {
         //16字节
         std::string ret;
         for (int i = 0; i < 8; ++i) {
@@ -298,30 +340,39 @@ public:
         return ret;
     }
 
-    static std::string hexBytesToString(const std::vector<unsigned char> &vec, int pos, int len) {
+    /**
+     * 把指定长度的字节流转为 16 进制的字符串 (hex string)
+     * 例如 0xFA 0xAA 0x2A 会得到 "FAAA2A"
+     * @param vec 原始字节容器
+     * @param pos 解析起点
+     * @param len 长度
+     * @return 16 进制的字符串 (hex string)
+     */
+    static std::string hexBytesToString(const std::vector<unsigned char> &vec, uint32_t pos, int len) {
         std::string ret;
-        for (int i = pos; i < pos + 1; ++i) {
+        for (int i = pos; i < pos + len; ++i) {
             auto p = hexBytesToCharPair(vec[i]);
             ret.push_back(p.first);
             ret.push_back(p.second);
         }
-
         return ret;
     }
-
-
 };
 
+/**
+ * 解析器类, 线程不安全
+ */
 class Parsers {
 public:
     friend class CaptureSession;
-
+    static bool isInitialized;
 private:
     static std::string nextSuggestedParser;
 
+    static uint32_t externalParserPos;
+
     static std::pair<ParsedFrame, uint32_t>
     ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem);
-
 
     static std::pair<ParsedFrame, uint32_t>
     ipv4Parser(const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem);
@@ -334,9 +385,6 @@ private:
 
     static std::pair<ParsedFrame, uint32_t>
     wolParser(const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem);
-
-    static std::pair<ParsedFrame, uint32_t>
-    tcpParser(const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem);
 
     static std::pair<ParsedFrame, uint32_t>
     dummyParser(const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem) {
@@ -352,14 +400,47 @@ private:
 
     Parsers() = default;
 
-    //explicit Parsers(const std::vector<std::pair<std::string, std::string>> &paths);
-
 public:
     static std::map<std::string, decltype(&ipv4Parser)> internalParsers;
     static std::map<std::string, std::string> externalParsers;
 
     static void initParsers();
-    bool addExternalParser(const std::string &path);
+
+    /**
+     * 初始化 Parsers
+     * @param paths std::pair, 第一个是解析器的名称, 第二个是文件名 (必须在可执行文件的 pyParsers/ 下)
+    */
+    static void initParsers(const std::vector<std::pair<std::string, std::string>> &paths);
+
+    /**
+     * 对外部解析器的包装, 保证接口一致
+     * @param parserModule 解析器文件名
+     * @param parserFunc 解析器函数名
+     * @param vec 数据包原始内容
+     * @param pos 解析起点
+     * @param packetViewItem 当前数据包的 PacketViewItem 引用
+     * @return 是否成功, 若否, 则 string 中有更详细的信息
+     */
+    static std::pair<bool, std::string>
+    externalParserWrapper(std::string parserModule, std::string parserFunc,
+                          const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem);
+
+
+    /**
+    * 添加新的 External Parser
+    * @param path
+    * @return 是否成功
+    */
+    static bool addExternalParser(const std::string &path, const std::string &name);
+
+    /**
+     * 检查指定的解析器是否存在
+     * @param name 要检查的解析器名称
+     * @return 是否存在
+     */
+    static bool checkParserPresent(const std::string &name);
 };
 
 #endif  // DEMO_PACKET_SPOON_H
+
+#pragma clang diagnostic pop

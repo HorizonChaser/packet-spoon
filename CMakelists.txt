@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.10) 
+cmake_minimum_required(VERSION 3.10)
 
 SET(CMAKE_C_COMPILER gcc)
 SET(CMAKE_CXX_COMPILER g++)
 
 # set the project name 
-project(demo VERSION 1.0) 
+project(demo VERSION 1.0)
 
 
 set(CMAKE_PREFIX_PATH $ENV{QT_DIR})
@@ -14,11 +14,11 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set ( CMAKE_AUTOUIC ON )
-set ( CMAKE_AUTOMOC ON )
-set ( CMAKE_AUTORCC ON )
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 
-set (OPENSSL_ROOT_DIR ${CMAKE_SOURCE_DIR}/lib/openssl-0.9.8k_X64)
+set(OPENSSL_ROOT_DIR ${CMAKE_SOURCE_DIR}/lib/openssl-0.9.8k_X64)
 
 find_package(Qt6 COMPONENTS Widgets Core REQUIRED)
 
@@ -27,15 +27,16 @@ aux_source_directory(src/gui GUI_SRC_LIST)
 aux_source_directory(src/pcapDemo PCAP_DEMO_SRC_LIST)
 #aux_source_directory(fake FAKE_SRC_LIST)
 aux_source_directory(src/utils UTILS_SRC_LIST)
-set( QT_HEADERS include/gui/mainwindow.h include/gui/netcarditemmodel.h include/gui/cappage.h )
+set(QT_HEADERS include/gui/mainwindow.h include/gui/netcarditemmodel.h include/gui/cappage.h)
 
 # add lib path
 link_directories(${CMAKE_SOURCE_DIR}/lib/x64)
+link_directories(${CMAKE_SOURCE_DIR}/lib/py)
 
-qt6_wrap_ui( UI_HEADERS ${CMAKE_SOURCE_DIR}/src/gui/mainwindow.ui ${CMAKE_SOURCE_DIR}/src/gui/cappage.ui )
+qt6_wrap_ui(UI_HEADERS ${CMAKE_SOURCE_DIR}/src/gui/mainwindow.ui ${CMAKE_SOURCE_DIR}/src/gui/cappage.ui)
 
 # set output path
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY 	${CMAKE_SOURCE_DIR}/build)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 
 add_executable(${CMAKE_PROJECT_NAME} WIN32 ${PCAP_SRC_LIST} ${GUI_SRC_LIST} ${QT_HEADERS} ${UI_HEADERS} ${UTILS_SRC_LIST})
 
@@ -47,21 +48,23 @@ add_executable("pcap_demo" WIN32 ${PCAP_DEMO_SRC_LIST})
 target_link_libraries(${CMAKE_PROJECT_NAME} Packet)
 target_link_libraries(${CMAKE_PROJECT_NAME} wpcap)
 target_link_libraries(${CMAKE_PROJECT_NAME} ws2_32)
+target_link_libraries(${CMAKE_PROJECT_NAME} python3)
+target_link_libraries(${CMAKE_PROJECT_NAME} python311)
 
 target_link_libraries("pcap_demo" Packet)
 target_link_libraries("pcap_demo" wpcap)
 target_link_libraries("pcap_demo" ws2_32)
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-    Qt6::Widgets
-    Qt6::Core)
+        Qt6::Widgets
+        Qt6::Core)
 
-target_include_directories(demo PUBLIC 
-                           "${PROJECT_BINARY_DIR}" 
-                           "include"
-                           )
+target_include_directories(demo PUBLIC
+        "${PROJECT_BINARY_DIR}"
+        "include"
+        )
 
-target_include_directories("pcap_demo" PUBLIC 
-                           "${PROJECT_BINARY_DIR}" 
-                           "include"
-                           ) 
+target_include_directories("pcap_demo" PUBLIC
+        "${PROJECT_BINARY_DIR}"
+        "include"
+        )
