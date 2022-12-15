@@ -116,6 +116,7 @@ void CapPage::open_session(const QString &name) {
                                           << "brief content"
                                           );
     replace_model(ui->packetsBriefTableView, model);
+    replace_model(ui->packetDetailTreeView_4, nullptr);
     // TODO: SETTING CAP COUNT MANUALLY
     cThread = new CapThread(session, 1000);
     connect(cThread, &CapThread::error, this, &CapPage::onCapThreadError);

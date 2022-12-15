@@ -510,7 +510,7 @@ void Parsers::initParsers(const std::vector<std::pair<std::string, std::string>>
         initParsers();
         for (auto p: paths) {
             if (!checkParserPresent(p.first)) {
-                Parsers::externalParsers.insert(std::pair<std::string, std::string>(p.second, p.first))
+                Parsers::externalParsers.insert(std::pair<std::string, std::string>(p.second, p.first));
             }
         }
     }
