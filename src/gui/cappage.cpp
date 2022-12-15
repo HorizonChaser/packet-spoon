@@ -74,7 +74,12 @@ CapPage::CapPage(QWidget *parent) :
     ui->packetsBriefTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->packetsBriefTableView->horizontalHeader()->setMinimumSectionSize(80);
     ui->packetsBriefTableView->horizontalHeader()->setMaximumSectionSize(200);
-
+    ui->packetDetailTreeView_4->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->packetDetailTreeView_4->header()->hide();
+    ui->packetDetailTreeView_4->header()->setStretchLastSection(false);
+    ui->packetDetailTreeView_4->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+//    ui->packetDetailTreeView_4->header()->setMinimumSectionSize(10000);
+    ui->packetDetailTreeView_4->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     session = nullptr;
     cThread = nullptr;
     timer = new QTimer();

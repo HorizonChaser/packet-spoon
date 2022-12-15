@@ -40,7 +40,7 @@ void MainWindow::slotSelectNIC(const QString &nic_name){
     printf("using nic %s\n", nic_name.toStdString().c_str());
     fflush(stdout);
     reinterpret_cast<CapPage*>(ui->capture_page)->open_session(nic_name);
-    QMessageBox::information(this, "提示", "using nic " + nic_name);
+//    QMessageBox::information(this, "提示", "using nic " + nic_name);
 }
 
 void MainWindow::slotIfTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)

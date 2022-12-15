@@ -477,8 +477,8 @@ Parsers::ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, Pac
         Parsers::nextSuggestedParser = "dummyParser";
     }
 
-    auto l2Src = new FrameTuple("Source MAC Address", macSrc, 0, 5);
-    auto l2Dest = new FrameTuple("Destination MAC Address", macDest, 6, 11);
+    auto l2Src = new FrameTuple("Source MAC Address: ", macSrc, 0, 5);
+    auto l2Dest = new FrameTuple("Destination MAC Address: ", macDest, 6, 11);
     auto l2Type = new FrameTuple();
     switch (l3Proto) {
         case IPv4:

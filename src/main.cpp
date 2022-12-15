@@ -17,6 +17,7 @@
 
 static void init_program(){
     Parsers::initParsers();
+    Parsers::addExternalParser("tcpParser", "tcpParser");
 }
 
 #undef main

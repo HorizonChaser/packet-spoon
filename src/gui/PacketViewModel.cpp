@@ -81,8 +81,9 @@ PacketViewModel::PacketViewModel(const PacketViewItem &packet, QObject *parent) 
     for(auto &field : packet.detail){
         auto *fieldItem = new_item(field.name);
         for(auto &term : field.frame){
-            fieldItem->appendRow(new_item(get<0>(term) + ": " + get<1>(term)));
+            fieldItem->appendRow(new_item(get<0>(term) + get<1>(term)));
         }
         appendRow(fieldItem);
     }
+
 }

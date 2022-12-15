@@ -9,31 +9,31 @@ def tcpParser(in_arr: bytearray, pos: int):
     retFrame.frames = []
 
     srcFrame = Frame()
-    srcFrame.key = "Source Port:"
+    srcFrame.key = "Source Port: "
     srcFrame.val = (b2istr(in_arr[pos:pos + 2]))
     srcFrame.posBegin = pos
     srcFrame.posEnd = pos + 1
 
     dstFrame = Frame()
-    dstFrame.key = "Destination Port:"
+    dstFrame.key = "Destination Port: "
     dstFrame.val = (b2istr(in_arr[pos + 2:pos + 4]))
     dstFrame.posBegin = pos + 2
     dstFrame.posEnd = pos + 3
 
     seqFrame = Frame()
-    seqFrame.key = "Sequence Number:"
+    seqFrame.key = "Sequence Number: "
     seqFrame.val = (b2istr(in_arr[pos + 4:pos + 8]))
     seqFrame.posBegin = pos + 4
     seqFrame.posEnd = pos + 7
 
     ackFrame = Frame()
-    ackFrame.key = "Acknowledge Number:"
+    ackFrame.key = "Acknowledge Number: "
     ackFrame.val = b2istr(in_arr[pos + 8:pos + 12])
     ackFrame.posBegin = pos + 8
     ackFrame.posEnd = pos + 11
 
     hlenFrame = Frame()
-    hlenFrame.key = "Header Length:"
+    hlenFrame.key = "Header Length: "
     hlen = in_arr[pos + 12] >> 4 * 4
     hlenFrame.val = str(hlen)
     hlenFrame.posBegin = pos + 12
@@ -64,25 +64,25 @@ def tcpParser(in_arr: bytearray, pos: int):
     if len(flagStr) == 0:
         flagStr = 'No Flag Set'
     flagFrame = Frame()
-    flagFrame.key = "Flags:"
+    flagFrame.key = "Flags: "
     flagFrame.val = flagStr
     flagFrame.posBegin = pos + 13
     flagFrame.posEnd = pos + 13
 
     winSizeFrame = Frame()
-    winSizeFrame.key = 'Window Size:'
+    winSizeFrame.key = 'Window Size: '
     winSizeFrame.val = b2istr(in_arr[pos + 14:pos + 16])
     winSizeFrame.posBegin = pos + 14
     winSizeFrame.posEnd = pos + 15
 
     checksumFrame = Frame()
-    checksumFrame.key = 'Checksum:'
+    checksumFrame.key = 'Checksum: '
     checksumFrame.val = ''.join(['%02X' % b for b in in_arr[pos + 16:pos + 18]])
     checksumFrame.posBegin = pos + 16
     checksumFrame.posEnd = pos + 17
 
     urgFrame = Frame()
-    urgFrame.key = "Urgent Pointer:"
+    urgFrame.key = "Urgent Pointer: "
     if flags & 0x20:
         urgFrame.key = ''.join(['%02X' % b for b in in_arr[pos + 18:pos + 20]])
     else:
@@ -91,14 +91,14 @@ def tcpParser(in_arr: bytearray, pos: int):
     urgFrame.posEnd = pos + 19
 
     optionsFrame = Frame()
-    optionsFrame.key = 'Options:'
+    optionsFrame.key = 'Options: '
     if hlen > 20:
         optionsFrame.val = ''.join(['%02X' % b for b in in_arr[pos + 20:pos + hlen + 1]])
         optionsFrame.posBegin = pos + 20
         optionsFrame.posEnd = pos + hlen
         retFrame.pos = pos + hlen + 1
     else:
-        optionsFrame.val = 'Not Set'
+        optionsFrame.val = 'Not Set '
         optionsFrame.posBegin = pos + 12
         optionsFrame.posEnd = pos + 12
         retFrame.pos = pos + hlen
