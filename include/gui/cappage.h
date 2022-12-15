@@ -46,6 +46,8 @@ private slots:
 
     void on_backButton_clicked();
 
+    void on_packetsBriefTableView_clicked(const QModelIndex &index);
+
 signals:
     void goBackSignal();
 

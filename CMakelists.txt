@@ -27,9 +27,11 @@ aux_source_directory(src/gui GUI_SRC_LIST)
 aux_source_directory(src/pcapDemo PCAP_DEMO_SRC_LIST)
 #aux_source_directory(fake FAKE_SRC_LIST)
 aux_source_directory(src/utils UTILS_SRC_LIST)
-set(QT_HEADERS include/gui/mainwindow.h include/gui/netcarditemmodel.h include/gui/cappage.h)
-
+file(GLOB QT_HEADERS include/gui/*.h)
+#set(QT_HEADERS "include/gui/*.h")
+message("qtheaders ${QT_HEADERS}")
 # add lib path
+#file()
 link_directories(${CMAKE_SOURCE_DIR}/lib/x64)
 link_directories(${CMAKE_SOURCE_DIR}/lib/py)
 
@@ -38,7 +40,7 @@ qt6_wrap_ui(UI_HEADERS ${CMAKE_SOURCE_DIR}/src/gui/mainwindow.ui ${CMAKE_SOURCE_
 # set output path
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 
-add_executable(${CMAKE_PROJECT_NAME} WIN32 ${PCAP_SRC_LIST} ${GUI_SRC_LIST} ${QT_HEADERS} ${UI_HEADERS} ${UTILS_SRC_LIST})
+add_executable(${CMAKE_PROJECT_NAME} WIN32 src/main.cpp ${PCAP_SRC_LIST} ${GUI_SRC_LIST} ${QT_HEADERS} ${UI_HEADERS} ${UTILS_SRC_LIST})
 
 add_executable("pcap_demo" WIN32 ${PCAP_DEMO_SRC_LIST})
 

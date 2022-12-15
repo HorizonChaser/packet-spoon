@@ -13,7 +13,7 @@
 #include "utils.h"
 #include "gui/cappage.h"
 #include "ui_cappage.h"
-
+#include "gui/PacketViewModel.h"
 using namespace std;
 
 static QString hex2QChar(int h){
@@ -152,7 +152,7 @@ void CapPage::updatePacketsTable() {
         const PacketItem &packet = session->get_packet(static_cast<int>(i));
         model->appendRow(QList<QStandardItem *>()
                     << new QStandardItem(QString::number(packet.id))
-                    << new QStandardItem(QString::number(packet.cap_time))
+                    << new QStandardItem(to_string(packet.cap_time).c_str())
                     << new QStandardItem(QString::number(packet.cap_len))
                     << new QStandardItem(byteVec2QString(packet.content, 10))
                     );
@@ -198,4 +198,11 @@ void CapPage::on_backButton_clicked()
     free_cthread();
     free_session();
     emit goBackSignal();
+}
+
+void CapPage::on_packetsBriefTableView_clicked(const QModelIndex &index)
+{
+    int idx = index.row();
+    auto packetView = session->get_packet_view(idx);
+    replace_model(ui->packetDetailTreeView_4, new PacketViewModel(packetView));
 }

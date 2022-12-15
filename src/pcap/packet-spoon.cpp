@@ -262,6 +262,10 @@ const PacketViewItem &CaptureSession::get_packet_view(int id) {
 
     auto packetViewItem = new PacketViewItem();
     packetViewItem->id = id;
+    packetViewItem->len = this->get_packet(id).len;
+    packetViewItem->cap_len = this->get_packet(id).cap_len;
+    packetViewItem->nic_name = curr_interface.name;
+    packetViewItem->nic_friendly = curr_interface.friendly_name;
     packetViewItem->cap_time = this->get_packet(id).cap_time;
 
     const auto &vec = this->cap_packets[id].content;
@@ -396,7 +400,7 @@ Parsers::ipv4Parser(const std::vector<unsigned char> &vec, uint32_t pos, PacketV
     //TODO set packetViewItem.desc
     packetViewItem.detail.push_back(*frame);
 
-    return std::pair<ParsedFrame, uint32_t>(*frame, pos + headerLen);
+    return std::make_pair(*frame, pos + headerLen);
 }
 
 std::pair<ParsedFrame, uint32_t>
@@ -498,7 +502,7 @@ Parsers::ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, Pac
 
     //TODO set packetViewItem.desc
     packetViewItem.detail.push_back(*ethernetFrame);
-    return std::pair<ParsedFrame, uint32_t>(*ethernetFrame, (uint32_t) 14);
+    return std::make_pair(*ethernetFrame, (uint32_t) 14);
 }
 
 void Parsers::initParsers(const std::vector<std::pair<std::string, std::string>> &paths) {
@@ -511,7 +515,7 @@ void Parsers::initParsers(const std::vector<std::pair<std::string, std::string>>
 }
 
 std::pair<bool, std::string>
-Parsers::externalParserWrapper(std::string parserModule, std::string parserFunc, const std::vector<unsigned char> &vec,
+Parsers::externalParserWrapper(const std::string& parserModule, const std::string& parserFunc, const std::vector<unsigned char> &vec,
                                uint32_t pos, PacketViewItem &packetViewItem) {
     Py_Initialize();
     PyRun_SimpleString("import sys");

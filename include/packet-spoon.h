@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 #include "pcap.h"
 /*
@@ -86,8 +87,8 @@ public:
 
     ~NetworkInterface();
 
-    NetworkInterface(const std::string &name, const std::string &friendly_name, bool is_loop_back,
-                     std::vector<AddressItem> &addrs) : name(name), friendly_name(friendly_name),
+    NetworkInterface(std::string name, const std::string &friendly_name, bool is_loop_back,
+                     std::vector<AddressItem> &addrs) : name(std::move(name)), friendly_name(friendly_name),
                                                         is_loop_back(is_loop_back), addrs(addrs) {}
 
 };
@@ -99,10 +100,10 @@ public:
 struct PacketItem {
 public:
     // friend class std::vector;
-    uint32_t id;                                     //序号, 保证和 PacketViewItem 的一一对应
-    double cap_time;                            //捕获到的时刻, 相对开始捕获的时刻来说
-    uint32_t cap_len;                                //捕获到的长度, 可能小于 Len, 即没能完全捕获
-    uint32_t len;                                    //真实长度
+    uint32_t id{};                                     //序号, 保证和 PacketViewItem 的一一对应
+    double cap_time{};                            //捕获到的时刻, 相对开始捕获的时刻来说
+    uint32_t cap_len{};                                //捕获到的长度, 可能小于 Len, 即没能完全捕获
+    uint32_t len{};                                    //真实长度
     const std::vector<unsigned char> &content;  //原始内容
 
     explicit PacketItem(const std::vector<unsigned char> &c) : content(c) {}
@@ -126,6 +127,10 @@ public:
 class PacketViewItem {
 public:
     uint32_t id;           //序号, 保证和 PacketItem 的一一对应
+    uint32_t cap_len;                                //捕获到的长度, 可能小于 Len, 即没能完全捕获
+    uint32_t len;                                    //真实长度
+    std::string nic_name;
+    std::string nic_friendly;
     double cap_time;  //捕获到的时刻, 相对开始捕获的时刻来说
     AddressItem source;
     AddressItem target;
@@ -142,19 +147,19 @@ public:
  */
 class CaptureSession {
 public:
-    volatile uint32_t cap_count;                  //当前已经捕获多少个包, 允许并发读取
-    uint32_t cap_target;                          //目标捕获的包数, 0 则无限制
+    volatile uint32_t cap_count{};                  //当前已经捕获多少个包, 允许并发读取
+    uint32_t cap_target{};                          //目标捕获的包数, 0 则无限制
     const NetworkInterface &curr_interface;  //当前被选中的网卡
-    double cap_started_at;                   //捕获开始时间
-    double cap_ended_at;                     //捕获结束时间
+    double cap_started_at{};                   //捕获开始时间
+    double cap_ended_at{};                     //捕获结束时间
     std::string error_msg;                   //错误原因
 
     std::map<int, PacketViewItem> cap_packets_view;  //解析结果
     std::vector<PacketItem> cap_packets;             //原始数据包
 
-    volatile int status;  //状态, 仅供内部分析等同步用
-    pcap_t *cap_handle;   //捕获的句柄
-    int loop_ret;         // pcap_loop() 返回的状态
+    volatile int status{};  //状态, 仅供内部分析等同步用
+    pcap_t *cap_handle{};   //捕获的句柄
+    int loop_ret{};         // pcap_loop() 返回的状态
 
 public:
     CaptureSession() = delete;
@@ -395,7 +400,7 @@ private:
         retFrame->frame.emplace_back("Dummy Key: ", "with Dummy Value", pos, pos);
 
         packetViewItem.detail.push_back(*retFrame);
-        return std::pair<ParsedFrame, uint32_t>(*retFrame, pos);
+        return std::make_pair(*retFrame, pos);
     }
 
     Parsers() = default;
@@ -422,7 +427,7 @@ public:
      * @return 是否成功, 若否, 则 string 中有更详细的信息
      */
     static std::pair<bool, std::string>
-    externalParserWrapper(std::string parserModule, std::string parserFunc,
+    externalParserWrapper(const std::string& parserModule, const std::string& parserFunc,
                           const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem);
 
 
