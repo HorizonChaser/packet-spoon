@@ -461,6 +461,7 @@ Parsers::ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, Pac
         ARP, //0x0806
         WoL,//0x0842
         //其他协议以后再说
+        UNK
     };
     L3_PROTO l3Proto;
     if (vec[12] == 0x08 && vec[13] == 0x00) {
@@ -474,6 +475,9 @@ Parsers::ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, Pac
         Parsers::nextSuggestedParser = "dummyParser";
     } else if (vec[12] == 0x08 && vec[13] == 0x42) {
         l3Proto = WoL;
+        Parsers::nextSuggestedParser = "dummyParser";
+    }else {
+        l3Proto = UNK;
         Parsers::nextSuggestedParser = "dummyParser";
     }
 
@@ -493,12 +497,15 @@ Parsers::ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, Pac
         case WoL:
             l2Type = new FrameTuple("Type: ", "WoL", 12, 13);
             break;
+        case UNK:
+            l2Type = new FrameTuple("Type: ", "Unknown", 12, 13);
+            break;
     }
     ethernetFrame->frame.push_back(*l2Dest);
     ethernetFrame->frame.push_back(*l2Src);
     ethernetFrame->frame.push_back(*l2Type);
 
-    Parsers::nextSuggestedParser = "ipv4Parser";
+    //Parsers::nextSuggestedParser = "ipv4Parser";
 
     //TODO set packetViewItem.desc
     packetViewItem.detail.push_back(*ethernetFrame);
