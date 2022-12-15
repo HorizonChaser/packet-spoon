@@ -428,7 +428,8 @@ public:
 
     /**
     * 添加新的 External Parser
-    * @param path
+    * @param path 路径, 不含 py 扩展名
+    * @param name 解析器函数的名字
     * @return 是否成功
     */
     static bool addExternalParser(const std::string &path, const std::string &name);
