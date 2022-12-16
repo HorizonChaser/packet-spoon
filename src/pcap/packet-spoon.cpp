@@ -331,6 +331,7 @@ std::pair<ParsedFrame, uint32_t>
 Parsers::ipv4Parser(const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem) {
     typedef std::tuple<std::string, std::string, int, int> FrameTuple;
 
+    pos = 14;
     auto frame = new ParsedFrame();
     if ((vec[pos] & 0xF0) == 0x40) {
         frame->name = "Internet Protocol Version 4";
