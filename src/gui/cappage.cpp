@@ -14,6 +14,8 @@
 #include "gui/cappage.h"
 #include "ui_cappage.h"
 #include "gui/PacketViewModel.h"
+#include "gui/PacketTermItem.h"
+#include "gui/StatusBarUpdater.h"
 using namespace std;
 
 static QString hex2QChar(int h){
@@ -76,15 +78,17 @@ CapPage::CapPage(QWidget *parent) :
     ui->packetsBriefTableView->horizontalHeader()->setMaximumSectionSize(200);
     ui->packetDetailTreeView_4->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->packetDetailTreeView_4->header()->hide();
-    ui->packetDetailTreeView_4->header()->setStretchLastSection(false);
+//    ui->packetDetailTreeView_4->header()->setStretchLastSection(false);
     ui->packetDetailTreeView_4->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 //    ui->packetDetailTreeView_4->header()->setMinimumSectionSize(10000);
     ui->packetDetailTreeView_4->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
     session = nullptr;
     cThread = nullptr;
     timer = new QTimer();
     connect(timer, &QTimer::timeout, this, &CapPage::updatePacketsTable);
     timer->start(500);
+
 }
 
 CapPage::~CapPage()
@@ -210,5 +214,25 @@ void CapPage::on_packetsBriefTableView_clicked(const QModelIndex &index)
 {
     int idx = index.row();
     auto packetView = session->get_packet_view(idx);
-    replace_model(ui->packetDetailTreeView_4, new PacketViewModel(packetView));
+    auto *model = new PacketViewModel(packetView);
+    replace_model(ui->packetDetailTreeView_4, model);
+    auto *selectionModel = ui->packetDetailTreeView_4->selectionModel();
+    qDebug() << "on_packetsBriefTableView_clicked: " << selectionModel->model()->rowCount();
+    connect(selectionModel,&QItemSelectionModel::currentRowChanged,this,&CapPage::slotIfTableCurrentRowChanged);
+    ui->packetRawDisplay->showPacket(session->get_packet(idx), session->get_packet_view(idx));
+}
+
+void CapPage::slotIfTableCurrentRowChanged(const QModelIndex &current, const QModelIndex &previous) {
+//    QMessageBox::information(this, "提示", "treeview clicked");
+    QModelIndex index = current.sibling(current.row(),0);
+    auto* item = dynamic_cast<PacketTermItem *>(dynamic_cast<PacketViewModel *>(ui->packetDetailTreeView_4->model())->itemFromIndex(
+            index));
+    QStringList qsl;
+    qsl.append("selected range:");
+    qsl.append(QString::number(item->getStart()));
+    qsl.append(QString::number(item->getEnd()));
+    statusBarUpdater()->statusBarSend(qsl.join(" "));
+    if(item->hasHighlight()){
+        ui->packetRawDisplay->highlight(item->getStart(), item->getEnd());
+    }
 }

@@ -5,7 +5,8 @@
 #include "gui/mainwindow.h"
 #include "ui_mainwindow.h"
 #include "gui/netcarditemmodel.h"
-
+#include "utils.h"
+#include "gui/StatusBarUpdater.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -13,13 +14,15 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ncModel = new NetCardItemModel(ui->if_table);
-    ui->if_table->setModel(ncModel);
+//    ui->if_table->setModel(ncModel);
+    replace_model(ui->if_table, ncModel);
     ui->if_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     connect(ui->if_table->selectionModel(),&QItemSelectionModel::selectionChanged,this,&MainWindow::slotIfTableSelectionChanged);
     connect(ui->if_table->selectionModel(),&QItemSelectionModel::currentChanged,this,&MainWindow::slotIfTableCurrentChanged);
     connect(ui->if_table->selectionModel(),&QItemSelectionModel::currentRowChanged,this,&MainWindow::slotIfTableCurrentRowChanged);
     connect(this, &MainWindow::signalSelectNIC, this, &MainWindow::slotSelectNIC);
     connect(ui->capture_page, &CapPage::goBackSignal, this, &MainWindow::onCapPageBack);
+    connect(statusBarUpdater(), &StatusBarUpdater::statusBarSend, this, &MainWindow::statusBarDisplay);
 }
 
 MainWindow::~MainWindow()
@@ -88,4 +91,8 @@ void MainWindow::slotIfTableCurrentRowChanged(const QModelIndex &current, const 
 
 void MainWindow::onCapPageBack() {
     ui->stackedWidget->setCurrentIndex(0);
+}
+
+void MainWindow::statusBarDisplay(const QString &str) {
+    ui->statusbar->showMessage(str, 1000);
 }

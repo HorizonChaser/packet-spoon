@@ -22,6 +22,7 @@ signals:
 
 public slots:
     void onCapPageBack();
+    void statusBarDisplay(const QString &str);
 
 private slots:
     void slotSelectNIC(const QString &nic_name);

@@ -3,6 +3,7 @@
 //
 
 #include "gui/PacketViewModel.h"
+#include "gui/PacketTermItem.h"
 #include <QStandardItem>
 #include <string>
 #include <sstream>
@@ -13,8 +14,12 @@
 #define OSS2Item new_item(oss.str())
 
 using namespace std;
-static QStandardItem* new_item(const string& str){
-    return new QStandardItem(str.c_str());
+static PacketTermItem* new_item(const string& str){
+    return new PacketTermItem(str.c_str());
+}
+
+static PacketTermItem* new_item(const string& str, int start, int end){
+    return new PacketTermItem(str.c_str(), start, end);
 }
 
 static _Put_time<char> get_datetime(int64_t timestamp){
@@ -79,9 +84,23 @@ PacketViewModel::PacketViewModel(const PacketViewItem &packet, QObject *parent) 
     appendRow(addresses);
 
     for(auto &field : packet.detail){
-        auto *fieldItem = new_item(field.name);
-        for(auto &term : field.frame){
-            fieldItem->appendRow(new_item(get<0>(term) + get<1>(term)));
+        int start = 0, end = 0;
+        if(!field.frame.empty()){
+            start = get<2>(field.frame[0]);
+            end = get<3>(field.frame[0]);
+            for(auto &term : field.frame){
+                start = min(start, get<2>(term));
+                end = max(end, get<3>(term));
+            }
+        }
+        auto *fieldItem = new_item(field.name, start, end + 1 );
+        auto termVec = field.frame;
+        if(!termVec.empty())
+            std::sort(termVec.begin(), termVec.end(), [](auto &a, auto &b){
+               return get<2>(a) < get<2>(b);
+            });
+        for(auto &term : termVec){
+            fieldItem->appendRow(new_item(get<0>(term) + get<1>(term), get<2>(term), get<3>(term) + 1));
         }
         appendRow(fieldItem);
     }

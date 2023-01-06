@@ -35,7 +35,9 @@ message("qtheaders ${QT_HEADERS}")
 link_directories(${CMAKE_SOURCE_DIR}/lib/x64)
 link_directories(${CMAKE_SOURCE_DIR}/lib/py)
 
-qt6_wrap_ui(UI_HEADERS ${CMAKE_SOURCE_DIR}/src/gui/mainwindow.ui ${CMAKE_SOURCE_DIR}/src/gui/cappage.ui)
+file(GLOB QT_UIS ${CMAKE_SOURCE_DIR}/src/gui/*.ui)
+
+qt6_wrap_ui(UI_HEADERS ${QT_UIS})
 
 # set output path
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)

@@ -27,44 +27,12 @@
      <widget class="QTableView" name="packetsBriefTableView"/>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_12">
+     <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="1,1">
       <item>
        <widget class="QTreeView" name="packetDetailTreeView_4"/>
       </item>
       <item>
-       <widget class="QScrollArea" name="packetRawScrollArea_4">
-        <property name="widgetResizable">
-         <bool>true</bool>
-        </property>
-        <widget class="QWidget" name="scrollAreaWidgetContents_8">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>368</width>
-           <height>242</height>
-          </rect>
-         </property>
-         <widget class="QWidget" name="horizontalLayoutWidget_8">
-          <property name="geometry">
-           <rect>
-            <x>-1</x>
-            <y>-1</y>
-            <width>371</width>
-            <height>251</height>
-           </rect>
-          </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_13">
-           <item>
-            <widget class="QTextBrowser" name="packetHexBrowser_4"/>
-           </item>
-           <item>
-            <widget class="QTextBrowser" name="packetAsciiBroswer_4"/>
-           </item>
-          </layout>
-         </widget>
-        </widget>
-       </widget>
+       <widget class="PacketRawDisplay" name="packetRawDisplay" native="true"/>
       </item>
      </layout>
     </item>
@@ -130,6 +98,14 @@
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PacketRawDisplay</class>
+   <extends>QWidget</extends>
+   <header location="global">gui/packetrawdisplay.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

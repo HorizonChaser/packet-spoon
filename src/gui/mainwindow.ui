@@ -175,7 +175,7 @@
   <customwidget>
    <class>CapPage</class>
    <extends>QWidget</extends>
-   <header location="global">gui/cappage.h</header>
+   <header>gui/cappage.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

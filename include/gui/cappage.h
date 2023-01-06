@@ -38,6 +38,7 @@ public:
 public slots:
     void onCapThreadError(const QString &msg);
     void updatePacketsTable();
+    void slotIfTableCurrentRowChanged(const QModelIndex &current, const QModelIndex &previous);
 
 private slots:
     void on_startButton_clicked();
