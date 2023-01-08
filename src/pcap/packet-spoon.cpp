@@ -331,7 +331,6 @@ std::pair<ParsedFrame, uint32_t>
 Parsers::ipv4Parser(const std::vector<unsigned char> &vec, uint32_t pos, PacketViewItem &packetViewItem) {
     typedef std::tuple<std::string, std::string, int, int> FrameTuple;
 
-    //pos = 14;
     auto frame = new ParsedFrame();
     if ((vec[pos] & 0xF0) == 0x40) {
         frame->name = "Internet Protocol Version 4";
@@ -371,10 +370,13 @@ Parsers::ipv4Parser(const std::vector<unsigned char> &vec, uint32_t pos, PacketV
     frame->frame.push_back(*(new FrameTuple("Time To Live (TTL): ", std::to_string(ttl), pos + 8, pos + 8)));
 
     if (vec[pos + 9] == 0x06) {
-        frame->frame.push_back(*(new FrameTuple("Protocol: ", "IPv4", pos + 9, pos + 9)));
+        frame->frame.push_back(*(new FrameTuple("Protocol: ", "TCP", pos + 9, pos + 9)));
+        Parsers::nextSuggestedParser = "tcpParser";
     } else {
         frame->frame.push_back(*(new FrameTuple("Protocol: ", "UNKNOWN", pos + 9, pos + 9)));
-        return *(new std::pair<ParsedFrame, uint32_t>(*frame, pos + headerLen));
+        Parsers::nextSuggestedParser = "dummyParser";
+
+        //frame->frame.push_back( *(new std::pair<ParsedFrame, uint32_t>(*frame, pos + headerLen)));
     }
     frame->frame.push_back(
             *(new FrameTuple("Checksum [Unverified] : ", Tools::hexBytesToString(vec, pos + 10, 2), pos + 10,
@@ -393,6 +395,8 @@ Parsers::ipv4Parser(const std::vector<unsigned char> &vec, uint32_t pos, PacketV
 
     //TODO add proto switch for transport layer
     Parsers::nextSuggestedParser = "tcpParser";
+    //std::cerr << "IN IPV4 NEXT AFTER SET: " << Parsers::nextSuggestedParser << std::endl;
+    free(malloc(1));
 
     packetViewItem.protocol = "IPv4";
     packetViewItem.source.addr = Tools::ipv4BytesToString(vec, pos + 12);
@@ -477,7 +481,7 @@ Parsers::ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, Pac
     } else if (vec[12] == 0x08 && vec[13] == 0x42) {
         l3Proto = WoL;
         Parsers::nextSuggestedParser = "dummyParser";
-    }else {
+    } else {
         l3Proto = UNK;
         Parsers::nextSuggestedParser = "dummyParser";
     }
@@ -488,6 +492,7 @@ Parsers::ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, Pac
     switch (l3Proto) {
         case IPv4:
             l2Type = new FrameTuple("Type: ", "IPv4", 12, 13);
+            Parsers::nextSuggestedParser = "ipv4Parser";
             break;
         case IPv6:
             l2Type = new FrameTuple("Type: ", "IPv6", 12, 13);
@@ -506,8 +511,6 @@ Parsers::ethernetParser(const std::vector<unsigned char> &vec, uint32_t pos, Pac
     ethernetFrame->frame.push_back(*l2Src);
     ethernetFrame->frame.push_back(*l2Type);
 
-    //Parsers::nextSuggestedParser = "ipv4Parser";
-
     //TODO set packetViewItem.desc
     packetViewItem.detail.push_back(*ethernetFrame);
     return std::make_pair(*ethernetFrame, (uint32_t) 14);
@@ -525,7 +528,8 @@ void Parsers::initParsers(const std::vector<std::pair<std::string, std::string>>
 }
 
 std::pair<bool, std::string>
-Parsers::externalParserWrapper(const std::string& parserModule, const std::string& parserFunc, const std::vector<unsigned char> &vec,
+Parsers::externalParserWrapper(const std::string &parserModule, const std::string &parserFunc,
+                               const std::vector<unsigned char> &vec,
                                uint32_t pos, PacketViewItem &packetViewItem) {
     Py_Initialize();
     PyRun_SimpleString("import sys");

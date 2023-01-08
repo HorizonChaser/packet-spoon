@@ -353,7 +353,7 @@ public:
      * @param len 长度
      * @return 16 进制的字符串 (hex string)
      */
-    static std::string hexBytesToString(const std::vector<unsigned char> &vec, uint32_t pos, int len) {
+    static std::string hexBytesToString(const std::vector<unsigned char> &vec, uint32_t pos, uint32_t len) {
         std::string ret;
         for (int i = pos; i < pos + len; ++i) {
             auto p = hexBytesToCharPair(vec[i]);

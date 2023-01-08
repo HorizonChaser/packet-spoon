@@ -77,7 +77,8 @@ def tcpParser(in_arr: bytearray, pos: int):
 
     checksumFrame = Frame()
     checksumFrame.key = 'Checksum: '
-    checksumFrame.val = ''.join(['%02X' % b for b in in_arr[pos + 16:pos + 18]])
+    checksumFrame.val = ''.join(
+        ['%02X' % b for b in in_arr[pos + 16:pos + 18]])
     checksumFrame.posBegin = pos + 16
     checksumFrame.posEnd = pos + 17
 
@@ -93,7 +94,8 @@ def tcpParser(in_arr: bytearray, pos: int):
     optionsFrame = Frame()
     optionsFrame.key = 'Options: '
     if hlen > 20:
-        optionsFrame.val = ''.join(['%02X' % b for b in in_arr[pos + 20:pos + hlen + 1]])
+        optionsFrame.val = ''.join(
+            ['%02X' % b for b in in_arr[pos + 20:pos + hlen + 1]])
         optionsFrame.posBegin = pos + 20
         optionsFrame.posEnd = pos + hlen
         retFrame.pos = pos + hlen + 1
@@ -105,6 +107,11 @@ def tcpParser(in_arr: bytearray, pos: int):
 
     # TODO set nextParser according to port?
     retFrame.nextSuggestedParser = "dummyParser"
+
+    if b2istr(in_arr[pos:pos + 2]) == '80' or b2istr(in_arr[pos + 2:pos + 4]) == '80'\
+            or b2istr(in_arr[pos:pos + 2]) == '8080' or b2istr(in_arr[pos + 2:pos + 4]) == '8080'\
+            or b2istr(in_arr[pos:pos + 2]) == '8088' or b2istr(in_arr[pos + 2:pos + 4]) == '8088':
+        retFrame.nextSuggestedParser = "httpParserAppLayer"
 
     retFrame.frames.append(srcFrame)
     retFrame.frames.append(dstFrame)
