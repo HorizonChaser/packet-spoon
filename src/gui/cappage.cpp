@@ -10,6 +10,7 @@
 #include <cctype>
 #include <vector>
 #include <QHeaderView>
+#include <QFileDialog>
 #include "utils.h"
 #include "gui/cappage.h"
 #include "ui_cappage.h"
@@ -54,15 +55,13 @@ void CapThread::run() {
     if(session == nullptr){
         emit error("程序逻辑错误，请联系开发者。");
     }
-//    qDebug()<<"Thread "<<QThread::currentThreadId() << " starting capturing...\n";
+    qDebug()<<"Thread "<<QThread::currentThreadId() << " starting capturing...\n";
     if(cap_cnt <= 0){
         session->start_capture();
     } else {
         session->start_capture(cap_cnt);
     }
-//    qDebug()<<"Thread "<<QThread::currentThreadId() << " capturing stopped.\n";
-    printf("cThread stopped.");
-    fflush(stdout);
+    qDebug()<<"Thread "<<QThread::currentThreadId() << " capturing stopped.\n";
 }
 
 
@@ -87,7 +86,7 @@ CapPage::CapPage(QWidget *parent) :
     cThread = nullptr;
     timer = new QTimer();
     connect(timer, &QTimer::timeout, this, &CapPage::updatePacketsTable);
-    timer->start(500);
+
 
 }
 
@@ -102,13 +101,18 @@ CapPage::~CapPage()
 void CapPage::free_session() {
     Q_ASSERT(cThread == nullptr);
     if(session != nullptr) {
-        session->close();
+        if(started)
+            session->close();
         delete session;
         session = nullptr;
     }
 }
 
 void CapPage::open_session(const QString &name) {
+    started = false;
+    stopped = false;
+    ui->stopButton->setEnabled(false);
+    ui->startButton->setEnabled(true);
     free_cthread();
     free_session();
     session = new CaptureSession(name.toStdString());
@@ -129,16 +133,25 @@ void CapPage::open_session(const QString &name) {
 void CapPage::start_capture() {
     Q_ASSERT(cThread != nullptr);
     cThread->start();
-    printf("cThread started.");
-    fflush(stdout);
+    qDebug() << "cThread started.";
+    started = true;
+    ui->stopButton->setEnabled(true);
+    ui->startButton->setEnabled(false);
+    timer->start(500);
 }
 
 void CapPage::stop_capture() {
+    if(!started){
+        return;
+    }
+
     session->stop_capture();
-    QThread::msleep(500);
+//    QThread::msleep(500);
     //TODO: test whether it is appropriate to quit the thread.
     if(cThread->isRunning())
         cThread->quit();
+    timer->stop();
+    stopped = true;
 }
 
 void CapPage::free_cthread() {
@@ -153,58 +166,38 @@ void CapPage::onCapThreadError(const QString &msg) {
 }
 
 void CapPage::updatePacketsTable() {
-    if(session == nullptr)
+    if (session == nullptr)
         return;
-    auto *model = reinterpret_cast<QStandardItemModel*>(ui->packetsBriefTableView->model());
+    auto *model = dynamic_cast<QStandardItemModel *>(ui->packetsBriefTableView->model());
     auto rows = model->rowCount();
     size_t captured_cnt = session->get_packets().size();
-    for(size_t i = rows; i < captured_cnt; i++){
+    for (size_t i = rows; i < captured_cnt; i++) {
         const PacketItem &packet = session->get_packet(static_cast<int>(i));
         model->appendRow(QList<QStandardItem *>()
-                    << new QStandardItem(QString::number(packet.id))
-                    << new QStandardItem(to_string(packet.cap_time).c_str())
-                    << new QStandardItem(QString::number(packet.cap_len))
-                    << new QStandardItem(byteVec2QString(packet.content, 10))
-                    );
+                                 << new QStandardItem(QString::number(packet.id))
+                                 << new QStandardItem(to_string(packet.cap_time).c_str())
+                                 << new QStandardItem(QString::number(packet.cap_len))
+                                 << new QStandardItem(byteVec2QString(packet.content, 10))
+        );
     }
-
-//
-//    auto *model = new QStandardItemModel;
-//    auto packets = session->cap_packets;
-//    int index = 0;
-//    for(auto &packet : packets){
-//        model->appendRow(QList<QStandardItem *>()
-//                            << new QStandardItem(QString::number(packet.id))
-//                            << new QStandardItem(QString::number(packet.cap_time))
-//                            << new QStandardItem(QString::number(packet.cap_len))
-//                            << new QStandardItem(byteVec2QString(packet.content, 10))
-//                            );
-//        index++;
-//    }
-//    model->setHorizontalHeaderLabels(QStringList()
-//                                              << "id"
-//                                              << "time"
-//                                              << "len"
-//                                              << "brief content"
-//                                              );
-//    replace_model(ui->packetsBriefTableView, model);
 }
-
 void CapPage::on_startButton_clicked()
 {
+
     start_capture();
 }
 
 void CapPage::on_stopButton_clicked()
 {
     stop_capture();
-//    updatePacketsTable();
+
+    ui->stopButton->setEnabled(false);
 }
 
 void CapPage::on_backButton_clicked()
 {
     stop_capture();
-    QThread::msleep(1000);
+//    QThread::msleep(500);
     free_cthread();
     free_session();
     emit goBackSignal();
@@ -218,11 +211,11 @@ void CapPage::on_packetsBriefTableView_clicked(const QModelIndex &index)
     replace_model(ui->packetDetailTreeView_4, model);
     auto *selectionModel = ui->packetDetailTreeView_4->selectionModel();
     qDebug() << "on_packetsBriefTableView_clicked: " << selectionModel->model()->rowCount();
-    connect(selectionModel,&QItemSelectionModel::currentRowChanged,this,&CapPage::slotIfTableCurrentRowChanged);
+    connect(selectionModel,&QItemSelectionModel::currentRowChanged,this,&CapPage::slotPacketDetailCurrentRowChanged);
     ui->packetRawDisplay->showPacket(session->get_packet(idx), session->get_packet_view(idx));
 }
 
-void CapPage::slotIfTableCurrentRowChanged(const QModelIndex &current, const QModelIndex &previous) {
+void CapPage::slotPacketDetailCurrentRowChanged(const QModelIndex &current, const QModelIndex &previous) {
 //    QMessageBox::information(this, "提示", "treeview clicked");
     QModelIndex index = current.sibling(current.row(),0);
     auto* item = dynamic_cast<PacketTermItem *>(dynamic_cast<PacketViewModel *>(ui->packetDetailTreeView_4->model())->itemFromIndex(
@@ -235,4 +228,12 @@ void CapPage::slotIfTableCurrentRowChanged(const QModelIndex &current, const QMo
     if(item->hasHighlight()){
         ui->packetRawDisplay->highlight(item->getStart(), item->getEnd());
     }
+}
+
+void CapPage::savePcap() {
+    if(!stopped){
+        QMessageBox::information(this, "提示", "抓包完成，请完成抓包后再保存");
+    }
+    QString fileName = QFileDialog::getSaveFileName(this, "保存抓包结果", "./", "pcap files (*.pcap)");
+    session->dump_to_file_all(fileName.toStdString());
 }

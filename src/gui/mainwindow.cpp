@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
     ncModel = new NetCardItemModel(ui->if_table);
 //    ui->if_table->setModel(ncModel);
     replace_model(ui->if_table, ncModel);
@@ -23,6 +24,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::signalSelectNIC, this, &MainWindow::slotSelectNIC);
     connect(ui->capture_page, &CapPage::goBackSignal, this, &MainWindow::onCapPageBack);
     connect(statusBarUpdater(), &StatusBarUpdater::statusBarSend, this, &MainWindow::statusBarDisplay);
+    ui->actionsave->setEnabled(false);
+    connect(ui->actionsave, &QAction::triggered, ui->capture_page, &CapPage::savePcap);
 }
 
 MainWindow::~MainWindow()
@@ -42,7 +45,8 @@ void MainWindow::slotSelectNIC(const QString &nic_name){
 
     printf("using nic %s\n", nic_name.toStdString().c_str());
     fflush(stdout);
-    reinterpret_cast<CapPage*>(ui->capture_page)->open_session(nic_name);
+    ui->actionsave->setEnabled(true);
+    dynamic_cast<CapPage*>(ui->capture_page)->open_session(nic_name);
 //    QMessageBox::information(this, "提示", "using nic " + nic_name);
 }
 
@@ -61,7 +65,9 @@ void MainWindow::slotIfTableCurrentChanged(const QModelIndex &current, const QMo
 void MainWindow::slotIfTableCurrentRowChanged(const QModelIndex &current, const QModelIndex &previous)
 {
 //    printf("slotIfTableCurrentRowChanged\n");
-
+    if(!current.isValid())
+        return;
+    ui->pushButton->setEnabled(true);
     //取选中的这行的第一个元素的index
     QModelIndex index = current.sibling(current.row(),0);
     QStandardItem* item = ncModel->itemFromIndex(index);
@@ -90,6 +96,8 @@ void MainWindow::slotIfTableCurrentRowChanged(const QModelIndex &current, const 
 }
 
 void MainWindow::onCapPageBack() {
+    ui->pushButton->setEnabled(false);
+    ui->actionsave->setEnabled(false);
     ui->stackedWidget->setCurrentIndex(0);
 }
 

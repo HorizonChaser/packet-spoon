@@ -81,14 +81,14 @@ std::vector<NetworkInterface> NetworkInterface::get_all_network_interfaces() {
                         memset(buf, 0, 100);
                     }
                     if (a->netmask) {
-                        inet_ntop(AF_INET, &((struct sockaddr_in *) a->addr)->sin_addr.s_addr, buf, 100);
+                        inet_ntop(AF_INET, &((struct sockaddr_in *) a->netmask)->sin_addr.s_addr, buf, 100);
 //                        auto res = inet_ntoa(((struct sockaddr_in *) a->addr)->sin_addr);
 //                        memcpy(buf, res, strlen(res));
                         currAddr->mask = *(new std::string(buf));
                         memset(buf, 0, 100);
                     }
                     if (a->broadaddr) {
-                        inet_ntop(AF_INET, &((struct sockaddr_in *) a->addr)->sin_addr.s_addr, buf, 100);
+                        inet_ntop(AF_INET, &((struct sockaddr_in *) a->broadaddr)->sin_addr.s_addr, buf, 100);
 //                        auto res = inet_ntoa(((struct sockaddr_in *) a->addr)->sin_addr);
 //                        memcpy(buf, res, strlen(res));
                         currAddr->broadcast_addr = *(new std::string(buf));

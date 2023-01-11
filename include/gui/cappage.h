@@ -38,7 +38,9 @@ public:
 public slots:
     void onCapThreadError(const QString &msg);
     void updatePacketsTable();
-    void slotIfTableCurrentRowChanged(const QModelIndex &current, const QModelIndex &previous);
+    void slotPacketDetailCurrentRowChanged(const QModelIndex &current, const QModelIndex &previous);
+    void savePcap();
+
 
 private slots:
     void on_startButton_clicked();
@@ -53,6 +55,8 @@ signals:
     void goBackSignal();
 
 private:
+    bool started = false;
+    bool stopped = false;
     Ui::CapPage *ui;
     CaptureSession *session;
     void free_session();
