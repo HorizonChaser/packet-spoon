@@ -19,6 +19,8 @@ static void init_program(){
     Parsers::initParsers();
     Parsers::addExternalParser("tcpParser", "tcpParser");
     Parsers::addExternalParser("httpParserAppLayer", "httpParserAppLayer");
+    rmdir("logs");
+    mkdir("logs");
 }
 
 #undef main

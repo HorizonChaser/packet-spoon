@@ -574,7 +574,15 @@ Parsers::externalParserWrapper(const std::string &parserModule, const std::strin
     }
 
     rapidjson::Document document;
+    static int idx = 1;
+    char filename[100];
+    sprintf(filename, "logs/test%d.json", idx++);
+    FILE* fp = fopen(filename, "w");
+    fprintf(fp, PyBytes_AS_STRING(ret));
+    fflush(fp);
+    fclose(fp);
     document.Parse(PyBytes_AS_STRING(ret));
+
     Py_Finalize();
 
     auto newFrame = new ParsedFrame();
