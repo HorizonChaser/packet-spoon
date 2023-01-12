@@ -85,7 +85,7 @@ def tcpParser(in_arr: bytearray, pos: int):
     urgFrame = Frame()
     urgFrame.key = "Urgent Pointer: "
     if flags & 0x20:
-        urgFrame.key = ''.join(['%02X' % b for b in in_arr[pos + 18:pos + 20]])
+        urgFrame.val = ''.join(['%02X' % b for b in in_arr[pos + 18:pos + 20]])
     else:
         urgFrame.val = 'null (URG flag not set)'
     urgFrame.posBegin = pos + 18
