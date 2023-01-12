@@ -19,6 +19,7 @@ def httpParserAppLayer(in_arr: bytearray, pos: int):
     retFrame.desc = 'Hyper Text Transfer Protocol'
     in_str_arr[0].split(b' ')
     retFrame.name = 'Hyper Text Transfer Protocol'
+    retFrame.protocol = 'HTTP'
     retFrame.frames = []
     retFrame.pos = pos + len(in_arr)
 

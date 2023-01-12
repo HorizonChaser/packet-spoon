@@ -13,6 +13,7 @@
 #include <ctime>
 
 #include <QApplication>
+#include <QStyleFactory>
 #include "packet-spoon.h"
 
 static void init_program(){
@@ -25,7 +26,9 @@ static void init_program(){
 int main(int argc, char** argv) {
     init_program();
     QApplication a(argc, argv);
+    QApplication::setStyle(QStyleFactory::create("Fusion"));
     MainWindow w;
+    w.setWindowTitle("Packet Spoon");
     w.show();
 
     return a.exec();
